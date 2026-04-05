@@ -1,0 +1,97 @@
+{
+  "phase": 1,
+  "phase_label": "Sprint Execution",
+  "sprint": 10,
+  "sprint_label": "Sprint 10",
+  "status": "complete",
+  "active_stories": [],
+  "completed_stories": [
+    { "id": "S01", "title": "Wire Macro Regime into Conviction Score", "status": "done", "sprint": 1 },
+    { "id": "S02", "title": "Paper Trade Journal", "status": "done", "sprint": 1 },
+    { "id": "S03", "title": "Expand Ticker Universe with Sector ETFs", "status": "done", "sprint": 1 },
+    { "id": "S05", "title": "Conviction Score UI Enhancements", "status": "done", "sprint": 2 },
+    { "id": "S07", "title": "Conviction Calibration Tracking", "status": "done", "sprint": 3 },
+    { "id": "S08", "title": "Position Sizing Suggestions", "status": "done", "sprint": 4 },
+    { "id": "S16", "title": "Portfolio Config in Settings UI", "status": "done", "sprint": 4 },
+    { "id": "S15", "title": "Multi-Stock Conviction Alerts", "status": "done", "sprint": 5 },
+    { "id": "S17", "title": "Historical Paper Trade Back-Fill Tool", "status": "done", "sprint": 5 },
+    { "id": "S18", "title": "Open Trade Age Indicator and Quick-Close UI", "status": "done", "sprint": 5 },
+    { "id": "S06", "title": "Analyst Agent — Weight Optimisation (Sprint 6 run)", "status": "done", "sprint": 6, "notes": "8/8 tests. No weight change — news constant at 50. Re-run as S22 with real scores." },
+    { "id": "S10", "title": "FRED Macro Indicators Integration", "status": "done", "sprint": 6 },
+    { "id": "S19", "title": "Sector Exposure Dashboard", "status": "done", "sprint": 6 },
+    { "id": "S20", "title": "Leading Indicators + Pre-Breakout Screener", "status": "done", "sprint": 7 },
+    { "id": "S21", "title": "Alpha Vantage News Sentiment Integration", "status": "done", "sprint": 7 },
+    {
+      "id": "S22",
+      "title": "Analyst Weight Re-Optimisation (with real news scores)",
+      "status": "done",
+      "sprint": 8,
+      "notes": "Re-run 2026-04-04. Still no improvement — backfilled trades have news_score=NULL, imputed to 50.0. Zero variance in news pillar. metrics/weight_optimisation_20260404.json written. Re-run trigger: >=30 new trades with real AV news_score accumulated."
+    },
+    {
+      "id": "S23",
+      "title": "BUY/SELL/HOLD Signals in Leaderboard API + UI",
+      "status": "done",
+      "sprint": 8,
+      "notes": "annotate_signals() wired into leaderboard API and scoring universe endpoint. signal field added to LeaderboardEntry, ScoreResponse (API + TypeScript). Signal badge rendered in Leaderboard.tsx. 8/8 unit tests passing. Bugfix in Sprint 9: signals were not appearing because UI calls /api/scores/universe not /api/leaderboard."
+    },
+    {
+      "id": "S24",
+      "title": "Portfolio Summary API Endpoint",
+      "status": "done",
+      "sprint": 8,
+      "notes": "GET /api/portfolio/summary added. 4/4 unit tests passing."
+    },
+    {
+      "id": "S25",
+      "title": "Add Sector Field to Ticker Model",
+      "status": "done",
+      "sprint": 9,
+      "notes": "sector column added. Migration 005 applied. 76 tickers seeded. 5/5 tests. AMBER health resolved to GREEN."
+    },
+    {
+      "id": "S26",
+      "title": "Pre-Flight Variance Check in Weight Optimiser",
+      "status": "done",
+      "sprint": 9,
+      "notes": "check_pillar_variance() added. Exit code 2 on abort. 8/8 tests passing."
+    },
+    {
+      "id": "S27",
+      "title": "Fix FastAPI regex= Deprecation Warnings",
+      "status": "done",
+      "sprint": 9,
+      "notes": "9 occurrences of regex= replaced with pattern= in scoring.py and accuracy.py."
+    },
+    {
+      "id": "S28",
+      "title": "Regime-Adaptive Signal Thresholds",
+      "status": "done",
+      "sprint": 10,
+      "notes": "_REGIME_THRESHOLDS dict replaces 4 module-level constants. generate_signal() and annotate_signals() accept regime param. BEAR: BUY at 65+ (was 75), SELL at 50+ (was 60). MacroRegimeService wired into both /api/leaderboard and /api/scores/universe. signal field added to ScoreResponse. 20/20 signal tests passing (9 new regime tests)."
+    },
+    {
+      "id": "S29",
+      "title": "Regime Stratified Analysis Script",
+      "status": "done",
+      "sprint": 10,
+      "notes": "scripts/regime_stratified_analysis.py written and run. All 2,714 trades labelled UNKNOWN — macro_indicators has no T10Y2Y data. H12 appended to HYPOTHESES.md: T10Y2Y data gap blocks regime stratification. Action: seed macro_indicators with T10Y2Y historical series (Sprint 11 S31)."
+    },
+    {
+      "id": "S30",
+      "title": "Signal Health Endpoint",
+      "status": "done",
+      "sprint": 10,
+      "notes": "GET /api/health/signals live (200). Returns news_cache_count, news_cache_age_hours, av_key_configured, real_news_scored_trades, weight_rerun_ready. 7/7 tests in tests/api/test_signal_health.py. AV warning banner added to Leaderboard UI (amber, conditional on av_key_configured==false). SignalHealthResponse + healthAPI added to frontend client.ts."
+    }
+  ],
+  "blocked_stories": [
+    { "id": "S04", "title": "News Sentiment Pillar in Score", "status": "superseded", "blocker": "Superseded by S21." },
+    { "id": "S09", "title": "Morning Brief Narrative", "status": "blocked", "blocker": "Requires ANTHROPIC_API_KEY." }
+  ],
+  "last_updated": "2026-04-05",
+  "last_backtest_run": null,
+  "escalations_pending": false,
+  "decisions_needed_file": "DECISIONS_NEEDED.md",
+  "sprint_notes": "Sprint 10 complete. S28: regime-adaptive signal thresholds (BULL/CAUTION/BEAR). S29: regime stratified analysis — T10Y2Y data missing, all trades UNKNOWN, H12 written. S30: /api/health/signals endpoint live + AV warning banner in UI. 154/154 tests, 5/5 smoke check. Next: S31 (seed T10Y2Y), S32 (FRED news fallback), S33 (conviction threshold tuning H3)."
+}
