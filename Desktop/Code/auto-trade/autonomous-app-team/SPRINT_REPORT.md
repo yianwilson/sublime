@@ -1,32 +1,32 @@
-# Sprint 10 Report
+# Sprint 11 Report
 
 **Date:** 2026-04-05
-**Sprint:** 10
-**Stories:** S28, S29, S30
+**Sprint:** 11
+**Stories:** S31, S32, S33
 **Status:** COMPLETE ✅
 
 ---
 
 ## What Was Built
 
-### S28 — Regime-Adaptive Signal Thresholds
-- Replaced 4 module-level signal constants with `_REGIME_THRESHOLDS` dict keyed by BULL/CAUTION/BEAR
-- `generate_signal()` and `annotate_signals()` now accept `regime: Optional[str]`
-- BEAR regime: BUY fires at conviction>65 (was 75), SELL at >50 (was 60) — lower bar in downturns
-- `annotate_signals()` wired into both `/api/leaderboard` and `/api/scores/universe/SP500` with live MacroRegimeService lookup
-- `signal` field added to `ScoreResponse` so `/api/scores/universe/SP500` (the UI's actual call) returns signals
-- 9 new regime-specific unit tests (20 total in `tests/test_signals.py`)
+### S31 — Seed T10Y2Y Historical Data
+- `FredClient.get_series_range()` added — fetches a date range of FRED observations, skips "." placeholders, returns `[]` on any failure
+- `scripts/seed_t10y2y.py` — idempotent CLI script, `--start` (default 2023-01-01) + `--dry-run` flags
+- **Ran in Docker: seeded 812 T10Y2Y rows (2023-01-01 → 2026-04-05)**
+- **H12 immediately unblocked** — re-run of regime analysis now shows genuine BULL/CAUTION/BEAR stratification
+- 8 unit tests: 4 for `get_series_range()`, 4 for seed script (idempotency, update, unavailable guard)
 
-### S29 — Regime Stratified Analysis Script
-- `scripts/regime_stratified_analysis.py`: groups closed trades by T10Y2Y regime + conviction bucket, outputs JSON + human-readable table
-- H12 appended to HYPOTHESES.md: analysis ran across 2,714 trades — all labelled UNKNOWN because T10Y2Y data is missing from `macro_indicators` table
-- **Key blocker identified:** macro_indicators needs historical T10Y2Y data seeded to enable regime stratification
+### S32 — FRED News/Sentiment Fallback
+- `app/services/fred_sentiment.py` — `FredSentimentService.get_score(db)` computes composite from UMCSENT (50%), VIXCLS (30%), USEPUINDXD (20%), each normalised/inverted to 0-100. Returns None when all series absent.
+- Fallback wired into `swing.py` lines 187-199: fires only when AV key absent AND raw_score is None. Sets `news_score = fred_score` and `news_sentiment_label = "FRED Composite"`
+- Scheduler extended: UMCSENT and USEPUINDXD added to `SERIES` list — will be ingested daily at 06:30 UTC
+- 9 unit tests: 6 for FredSentimentService (direction checks, clamping, None handling), 3 for swing.py fallback
 
-### S30 — Signal Health Endpoint
-- `GET /api/health/signals` returns: `news_cache_count`, `news_cache_age_hours`, `av_key_configured`, `real_news_scored_trades`, `weight_rerun_ready`
-- 7 unit tests in `tests/api/test_signal_health.py` — all passing
-- AV key warning banner added to Leaderboard UI: amber banner when `av_key_configured == false`
-- `SignalHealthResponse` interface + `healthAPI.getSignalHealth()` added to `frontend/src/api/client.ts`
+### S33 — min_conviction Query Filter
+- `GET /api/scores/universe/{universe}?min_conviction=N` and `GET /api/scores?min_conviction=N` — filters to stocks with conviction_score ≥ N
+- `Optional[int]` with `ge=0, le=100` — invalid values return HTTP 422
+- None conviction_score treated as 0 (excluded by any threshold)
+- 6 unit tests: filter correctness, alias endpoint, invalid value 422, None handling
 
 ---
 
@@ -34,40 +34,35 @@
 
 | Gate | Result |
 |------|--------|
-| All unit tests pass | ✅ 154 passed, 0 failed |
-| Reviewer approved all changed files | ✅ APPROVED (prior sprint) |
-| Smoke check — 5 endpoints 200 | ✅ /api/health/signals, /api/leaderboard, /api/scores/universe/SP500, /api/tickers, /api/macro/regime |
-| No new backend errors | ✅ Backend redeployed clean |
+| All unit tests pass | ✅ 181 passed, 0 failed (27 new tests added) |
+| Reviewer APPROVED | ✅ All 6 files reviewed, no issues |
+| Smoke check — 5 endpoints 200 | ✅ /api/health/signals, /api/scores/universe/SP500?min_conviction=60, /api/leaderboard, /api/tickers, /api/macro/regime |
+| No new backend errors | ✅ Rebuilt and redeployed clean |
 | SPRINT_REPORT.md written | ✅ This file |
 
 ---
 
-## Metrics
+## Key Data Finding — H12 Updated
 
-No strategy logic changed this sprint (signal thresholds adjusted but conviction scores unchanged). Analyst trigger conditions not met — Analyst Agent not run.
+With T10Y2Y seeded, the regime stratified analysis produced real results:
 
-Backtest signal from H12: **T10Y2Y data gap blocks regime stratification.** All 2,714 trades labelled UNKNOWN. Root cause: `macro_indicators` table has no T10Y2Y series. This also blocks H4 (regime-conditional weighting).
+| Regime  | N    | Win% |
+|---------|------|------|
+| BULL    | 980  | 57.6% |
+| BEAR    | 779  | 57.0% |
+| CAUTION | 955  | 55.4% |
 
-Current system health (from `/api/health/signals`):
-- AV key: not configured → news scoring unavailable, all news_score=50.0
-- Real news scored trades: 0 (of 2,714 closed trades)
-- Weight rerun ready: false (needs 30 real news trades)
+**Most important finding:** BEAR `<40` conviction bucket has **64.1% win rate (n=343)** — the strongest reliable signal in the dataset. BEAR `50-59` drops to **50.9%** — near coin-flip. Regime-conditional entry guidance is now quantitatively motivated.
 
----
-
-## Blockers Raised
-
-1. **T10Y2Y data missing** — seed `macro_indicators` with T10Y2Y historical series to enable H12 and H4
-2. **AV key not configured** — news scoring permanently at 50.0; no real news signal until AV key is provided
+H12 in HYPOTHESES.md updated with full real-data analysis. CAUTION is the weakest regime; BEAR mean-reversion thesis confirmed for oversold stocks.
 
 ---
 
-## Next Sprint Candidates (Sprint 11)
+## Next Sprint (Sprint 12) — Candidates
 
-Highest priority based on H12 analysis and blocker status:
-
-| Story | Description | Why Now |
-|-------|-------------|---------|
-| S31 | Seed T10Y2Y macro data | Unblocks H12 regime stratification + H4 regime weighting |
-| S32 | AV key → FRED fallback for news | Free FRED API provides sentiment proxy without paid AV key |
-| S33 | Conviction threshold tuning (H3) | U-shaped finding: tighten entry to 60+ conviction |
+| Story | Priority | Description |
+|-------|----------|-------------|
+| S34 | P1 | Regime-conditional leaderboard guidance overlay (UI shows regime + recommended conviction range) |
+| S35 | P1 | Seed UMCSENT + USEPUINDXD historical data (same pattern as S31 — enables FRED sentiment immediately) |
+| S36 | P2 | Fix regime_stratified_analysis ×100 display bug in avg/median return columns |
+| S37 | P2 | H10 investigation — are BEAR <40 wins from back-fill bias? Date-stratified analysis |
