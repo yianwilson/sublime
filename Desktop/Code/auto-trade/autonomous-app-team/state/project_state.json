@@ -1,8 +1,8 @@
 {
   "phase": 1,
   "phase_label": "Sprint Execution",
-  "sprint": 11,
-  "sprint_label": "Sprint 11",
+  "sprint": 12,
+  "sprint_label": "Sprint 12",
   "status": "complete",
   "active_stories": [],
   "completed_stories": [
@@ -50,15 +50,43 @@
       "status": "done",
       "sprint": 11,
       "notes": "GET /api/scores/universe/{u}?min_conviction=N and GET /api/scores?min_conviction=N added. Optional[int] ge=0 le=100. None conviction treated as 0. 6/6 tests passing."
+    },
+    {
+      "id": "S34",
+      "title": "Regime-conditional leaderboard guidance overlay",
+      "status": "done",
+      "sprint": 12,
+      "notes": "GET /api/macro/regime/guidance endpoint added (1h cache, T10Y2Y-based win rates per bucket). RegimeGuidance TS types + macroAPI.getGuidance() added. Leaderboard banner upgraded to show data-driven note + win rate table. BEAR guidance corrected to <40. 4/4 tests passing."
+    },
+    {
+      "id": "S35",
+      "title": "Seed UMCSENT + USEPUINDXD historical data",
+      "status": "done",
+      "sprint": 12,
+      "notes": "Pre-done from Sprint 11 agent work. seed_fred_series.py + test_seed_fred_series.py already in place. Dry-run confirmed: UMCSENT 38 rows, USEPUINDXD 1188 rows, 0 new inserts needed."
+    },
+    {
+      "id": "S36",
+      "title": "Fix ×100 display bug in regime_stratified_analysis.py",
+      "status": "done",
+      "sprint": 12,
+      "notes": "Pre-done. Display was already correct (avg return shows 1.86%, not 186%). test_regime_stratified_analysis.py guards against regression."
+    },
+    {
+      "id": "S37",
+      "title": "H10 backfill bias investigation script",
+      "status": "done",
+      "sprint": 12,
+      "notes": "scripts/h10_backfill_bias_analysis.py created. All 2,714 trades classified as backfill. BEAR <40 median hold=10d, 0 trades with hold ≤ 3d. Verdict: INSUFFICIENT FORWARD DATA. No look-ahead bias detected in backfill structure."
     }
   ],
   "blocked_stories": [
     { "id": "S04", "title": "News Sentiment Pillar in Score", "status": "superseded", "blocker": "Superseded by S21." },
     { "id": "S09", "title": "Morning Brief Narrative", "status": "blocked", "blocker": "Requires ANTHROPIC_API_KEY." }
   ],
-  "last_updated": "2026-04-05",
+  "last_updated": "2026-04-07",
   "last_backtest_run": "2026-04-05",
   "escalations_pending": false,
   "decisions_needed_file": "DECISIONS_NEEDED.md",
-  "sprint_notes": "Sprint 11 complete. S31: T10Y2Y seeded (812 rows) — H12 now has real data (BEAR<40=64.1% win). S32: FRED sentiment fallback live in scoring. S33: min_conviction filter on universe endpoint. 181/181 tests. Next: S34 (regime-conditional UI guidance), S35 (seed UMCSENT/USEPUINDXD history), S36 (fix display bug), S37 (H10 back-fill bias investigation)."
+  "sprint_notes": "Sprint 12 complete. S34: regime guidance endpoint live + Leaderboard banner upgraded with data-driven win rates. S35/S36: pre-done from Sprint 11 agent work. S37: H10 bias script — INSUFFICIENT FORWARD DATA (all 2,714 trades back-fill, median hold=10d, no look-ahead bias). 197/197 tests. Next: S38 (fix TS errors), S39 (BEAR regime entry warning), S40 (H11 exit logic), S41 (H3 weight re-opt)."
 }
