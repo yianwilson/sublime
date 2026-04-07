@@ -1,0 +1,652 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0464EB4CAC79040472202C8C /* HistoricalPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15BE1AF75FA2603FF5147494 /* HistoricalPriceService.swift */; };
+		058A4A649C71BAA1B7BDF940 /* PortfolioListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99FF1239494F69A7F358FDC4 /* PortfolioListView.swift */; };
+		059E485F0B8C384140A12F21 /* Insight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35DEDE5E6DCB8EF80830CD9 /* Insight.swift */; };
+		0CEFA548B51707CD17105915 /* Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6917C01D9862477D1297118F /* Transaction.swift */; };
+		0E11D0AF44E5C604C7CFB049 /* Trade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB60C2E6EA94ABA4042F5AA /* Trade.swift */; };
+		11DD0E40B0977A605CB7D647 /* Double+Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD39B21CFF9AABE30B149128 /* Double+Format.swift */; };
+		18563EF2EFD258FD36CF85E0 /* TimeSeriesEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E10A0684931E99469B4B98A /* TimeSeriesEngine.swift */; };
+		1A47A07BF91905D953A99335 /* FIFOEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E669A0B5D8BB0B0DE2573E /* FIFOEngine.swift */; };
+		21B08D19994EBFAD758C3D64 /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1600E44FF15602B0B9D9D915 /* EventsService.swift */; };
+		2A95F82CE8FA332570EB6BBF /* PriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99F87D5ECF86E5605DA5803E /* PriceService.swift */; };
+		2FA5258834FC065675BEB17D /* WatchlistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6039D8FDB48F449AE75E71E /* WatchlistView.swift */; };
+		313BBE3F4D3EFF65F73CE5C4 /* AddWatchlistItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B54DD31DA6336A4B3CC46E /* AddWatchlistItemView.swift */; };
+		364B10C0FBCCA3FB95FBFEBC /* WatchlistViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A16AC87CD91B6D8B20F696 /* WatchlistViewModel.swift */; };
+		463C3793C0130334D9AED41E /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA421DDEA4102D8E060FFE53 /* PortfolioViewModel.swift */; };
+		4FA27F37E8E851C74A3A4D94 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CB88E3C82BA8F0448CB304 /* ContentView.swift */; };
+		57FAB842536192D5239EC981 /* PriceServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */; };
+		5F221C7A627CFCBF94276B9C /* WatchlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */; };
+		670E09EFD0CA231032EBF5D2 /* PerformanceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3624E9B99BF76B35BAF59A /* PerformanceSnapshot.swift */; };
+		67190899DC98DDB4B377BB69 /* FIFOEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A96FEFECEA234BA6C64D0DD /* FIFOEngineTests.swift */; };
+		733F31C54CA6E53A5FF03F0B /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ABCFE2065F0750A4019025 /* PersistenceService.swift */; };
+		78C486709EC9AEC5230C2F21 /* CurrencyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C86A6E280AB9189772FF395 /* CurrencyService.swift */; };
+		7A5E77A4D5CE405F86F42C8A /* PortfolioViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E327DAB16D9FE9CEF80F1006 /* PortfolioViewModelTests.swift */; };
+		7F4AE3A687C44C0BC33B0D08 /* AssetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFD95B8680FFC952EED947C5 /* AssetViewModel.swift */; };
+		8C4C4684998050AF32A3697B /* AddAssetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E751A4E67B72FC1451B55739 /* AddAssetView.swift */; };
+		8D91806BB0D77AB86FA12956 /* WatchlistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F831CF0511C9371204F2256 /* WatchlistItem.swift */; };
+		92E58E76DF8E9E456968C3A0 /* TradeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2829AA309AC5FCCCA3071D23 /* TradeDetailView.swift */; };
+		935B06B7300C0866904FAD38 /* Holding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A5F42F5D8776921F118C8F9 /* Holding.swift */; };
+		940C6BCC623C0D9E00791E3A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDEF649E6F45C0F68A2B7A19 /* DashboardView.swift */; };
+		9ECD1D76063C62DA06BEADC3 /* UpcomingEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B29AD58F0E5CC41F6F3135 /* UpcomingEvent.swift */; };
+		B6ADB5796E64EF2F629B917F /* FolioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4556A712E7A2B56DE80CBD /* FolioApp.swift */; };
+		BD40C0A15A09F558DE867154 /* AssetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA67FB49323078E74F43F30 /* AssetViewModelTests.swift */; };
+		BF27DEBBFA7A13E28B3B759B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 54D4008A50CAB7A791191F9F /* Assets.xcassets */; };
+		C87949E11699A77C830E4DF9 /* Portfolio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43030F6E26031128C2DDD440 /* Portfolio.swift */; };
+		D5AB90888249B38E0F8B7011 /* AssetQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A8A7D05C52A941A77904A /* AssetQuote.swift */; };
+		D96450547084EA9F656D7BCB /* AssetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD7C8C003949A4C8DF8FF59 /* AssetDetailView.swift */; };
+		E3B9575AF448516F3052A309 /* AssetType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0511269A6146088E532D4276 /* AssetType.swift */; };
+		FCC4FB7FC051608C6775394B /* PortfolioInsightsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB4C996DD4AA6F1472C02859 /* PortfolioInsightsService.swift */; };
+		FF2E2EE25E31195F7A164D41 /* TimeSeriesEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15602CD7E219F0CCC8E55F21 /* TimeSeriesEngineTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D3324344F318CB5AD9CFD593 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 383A8F7C70F35B855AA13D98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0C56AF64BE26DB444D566E60;
+			remoteInfo = Folio;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		03ABCFE2065F0750A4019025 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
+		0511269A6146088E532D4276 /* AssetType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetType.swift; sourceTree = "<group>"; };
+		0C2A8A7D05C52A941A77904A /* AssetQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetQuote.swift; sourceTree = "<group>"; };
+		15602CD7E219F0CCC8E55F21 /* TimeSeriesEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSeriesEngineTests.swift; sourceTree = "<group>"; };
+		15BE1AF75FA2603FF5147494 /* HistoricalPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalPriceService.swift; sourceTree = "<group>"; };
+		1600E44FF15602B0B9D9D915 /* EventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsService.swift; sourceTree = "<group>"; };
+		18B54DD31DA6336A4B3CC46E /* AddWatchlistItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWatchlistItemView.swift; sourceTree = "<group>"; };
+		1C86A6E280AB9189772FF395 /* CurrencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyService.swift; sourceTree = "<group>"; };
+		2829AA309AC5FCCCA3071D23 /* TradeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDetailView.swift; sourceTree = "<group>"; };
+		2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistViewModelTests.swift; sourceTree = "<group>"; };
+		2E10A0684931E99469B4B98A /* TimeSeriesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSeriesEngine.swift; sourceTree = "<group>"; };
+		43030F6E26031128C2DDD440 /* Portfolio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Portfolio.swift; sourceTree = "<group>"; };
+		4A5F42F5D8776921F118C8F9 /* Holding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Holding.swift; sourceTree = "<group>"; };
+		51B29AD58F0E5CC41F6F3135 /* UpcomingEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingEvent.swift; sourceTree = "<group>"; };
+		54D4008A50CAB7A791191F9F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceServiceProtocol.swift; sourceTree = "<group>"; };
+		5B8BAAD0990BFEBF5AC22207 /* Folio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Folio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6917C01D9862477D1297118F /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
+		6BB51A125EC50A54621232F6 /* FolioTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		74E669A0B5D8BB0B0DE2573E /* FIFOEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIFOEngine.swift; sourceTree = "<group>"; };
+		8B4EA41EDA75780003D86348 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8F831CF0511C9371204F2256 /* WatchlistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistItem.swift; sourceTree = "<group>"; };
+		99F87D5ECF86E5605DA5803E /* PriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceService.swift; sourceTree = "<group>"; };
+		99FF1239494F69A7F358FDC4 /* PortfolioListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioListView.swift; sourceTree = "<group>"; };
+		9A96FEFECEA234BA6C64D0DD /* FIFOEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIFOEngineTests.swift; sourceTree = "<group>"; };
+		9FB60C2E6EA94ABA4042F5AA /* Trade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trade.swift; sourceTree = "<group>"; };
+		A35DEDE5E6DCB8EF80830CD9 /* Insight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Insight.swift; sourceTree = "<group>"; };
+		AA3624E9B99BF76B35BAF59A /* PerformanceSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceSnapshot.swift; sourceTree = "<group>"; };
+		AD39B21CFF9AABE30B149128 /* Double+Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Format.swift"; sourceTree = "<group>"; };
+		B5A16AC87CD91B6D8B20F696 /* WatchlistViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistViewModel.swift; sourceTree = "<group>"; };
+		BA421DDEA4102D8E060FFE53 /* PortfolioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioViewModel.swift; sourceTree = "<group>"; };
+		BDEF649E6F45C0F68A2B7A19 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		C1CB88E3C82BA8F0448CB304 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		CFD95B8680FFC952EED947C5 /* AssetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetViewModel.swift; sourceTree = "<group>"; };
+		DBD7C8C003949A4C8DF8FF59 /* AssetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetDetailView.swift; sourceTree = "<group>"; };
+		DEA67FB49323078E74F43F30 /* AssetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetViewModelTests.swift; sourceTree = "<group>"; };
+		E327DAB16D9FE9CEF80F1006 /* PortfolioViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioViewModelTests.swift; sourceTree = "<group>"; };
+		E6039D8FDB48F449AE75E71E /* WatchlistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistView.swift; sourceTree = "<group>"; };
+		E751A4E67B72FC1451B55739 /* AddAssetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddAssetView.swift; sourceTree = "<group>"; };
+		EB4C996DD4AA6F1472C02859 /* PortfolioInsightsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioInsightsService.swift; sourceTree = "<group>"; };
+		ED4556A712E7A2B56DE80CBD /* FolioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolioApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1543703B8DF8AD691D9CCB53 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				AD39B21CFF9AABE30B149128 /* Double+Format.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		167E3E30A49919FD8D56D74D = {
+			isa = PBXGroup;
+			children = (
+				D43EB5CE0E77CD5592721DA7 /* Folio */,
+				360934E47C7F5273A0F37E7B /* FolioTests */,
+				62523BE78BDC40FAA03B8BBD /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		191BFCAAA94D53D03BA90D8E /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E751A4E67B72FC1451B55739 /* AddAssetView.swift */,
+				DBD7C8C003949A4C8DF8FF59 /* AssetDetailView.swift */,
+				BDEF649E6F45C0F68A2B7A19 /* DashboardView.swift */,
+				99FF1239494F69A7F358FDC4 /* PortfolioListView.swift */,
+				2829AA309AC5FCCCA3071D23 /* TradeDetailView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		1C294D9F314E4708E67984A9 /* Watchlist */ = {
+			isa = PBXGroup;
+			children = (
+				4CCE030C8C25E49263B7E94D /* ViewModels */,
+				9EC64D7FA93D335617D3A89A /* Views */,
+			);
+			path = Watchlist;
+			sourceTree = "<group>";
+		};
+		218D0BBA62C139CC9BAFEE74 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C1CB88E3C82BA8F0448CB304 /* ContentView.swift */,
+				ED4556A712E7A2B56DE80CBD /* FolioApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		360934E47C7F5273A0F37E7B /* FolioTests */ = {
+			isa = PBXGroup;
+			children = (
+				DEA67FB49323078E74F43F30 /* AssetViewModelTests.swift */,
+				9A96FEFECEA234BA6C64D0DD /* FIFOEngineTests.swift */,
+				E327DAB16D9FE9CEF80F1006 /* PortfolioViewModelTests.swift */,
+				15602CD7E219F0CCC8E55F21 /* TimeSeriesEngineTests.swift */,
+				2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */,
+			);
+			path = FolioTests;
+			sourceTree = "<group>";
+		};
+		4CCE030C8C25E49263B7E94D /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B5A16AC87CD91B6D8B20F696 /* WatchlistViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		62523BE78BDC40FAA03B8BBD /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5B8BAAD0990BFEBF5AC22207 /* Folio.app */,
+				6BB51A125EC50A54621232F6 /* FolioTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6FAA4C38297F6F741BF39EF2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				0C2A8A7D05C52A941A77904A /* AssetQuote.swift */,
+				0511269A6146088E532D4276 /* AssetType.swift */,
+				4A5F42F5D8776921F118C8F9 /* Holding.swift */,
+				A35DEDE5E6DCB8EF80830CD9 /* Insight.swift */,
+				AA3624E9B99BF76B35BAF59A /* PerformanceSnapshot.swift */,
+				43030F6E26031128C2DDD440 /* Portfolio.swift */,
+				9FB60C2E6EA94ABA4042F5AA /* Trade.swift */,
+				6917C01D9862477D1297118F /* Transaction.swift */,
+				51B29AD58F0E5CC41F6F3135 /* UpcomingEvent.swift */,
+				8F831CF0511C9371204F2256 /* WatchlistItem.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		88480255158D5B212F402B12 /* Portfolio */ = {
+			isa = PBXGroup;
+			children = (
+				C786EE12FCBEFC34A3B4E149 /* ViewModels */,
+				191BFCAAA94D53D03BA90D8E /* Views */,
+			);
+			path = Portfolio;
+			sourceTree = "<group>";
+		};
+		8C5F73DF38E878B8C4641FD6 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				88480255158D5B212F402B12 /* Portfolio */,
+				1C294D9F314E4708E67984A9 /* Watchlist */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		8FFE92E9DD43D3BCEA7416A8 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				1C86A6E280AB9189772FF395 /* CurrencyService.swift */,
+				1600E44FF15602B0B9D9D915 /* EventsService.swift */,
+				74E669A0B5D8BB0B0DE2573E /* FIFOEngine.swift */,
+				15BE1AF75FA2603FF5147494 /* HistoricalPriceService.swift */,
+				03ABCFE2065F0750A4019025 /* PersistenceService.swift */,
+				EB4C996DD4AA6F1472C02859 /* PortfolioInsightsService.swift */,
+				99F87D5ECF86E5605DA5803E /* PriceService.swift */,
+				5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */,
+				2E10A0684931E99469B4B98A /* TimeSeriesEngine.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		9EC64D7FA93D335617D3A89A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				18B54DD31DA6336A4B3CC46E /* AddWatchlistItemView.swift */,
+				E6039D8FDB48F449AE75E71E /* WatchlistView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C786EE12FCBEFC34A3B4E149 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				CFD95B8680FFC952EED947C5 /* AssetViewModel.swift */,
+				BA421DDEA4102D8E060FFE53 /* PortfolioViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		CC992E9C4D98091FB3E623FF /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				6FAA4C38297F6F741BF39EF2 /* Models */,
+				8FFE92E9DD43D3BCEA7416A8 /* Services */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		D43EB5CE0E77CD5592721DA7 /* Folio */ = {
+			isa = PBXGroup;
+			children = (
+				54D4008A50CAB7A791191F9F /* Assets.xcassets */,
+				8B4EA41EDA75780003D86348 /* Info.plist */,
+				218D0BBA62C139CC9BAFEE74 /* App */,
+				CC992E9C4D98091FB3E623FF /* Core */,
+				1543703B8DF8AD691D9CCB53 /* Extensions */,
+				8C5F73DF38E878B8C4641FD6 /* Features */,
+			);
+			path = Folio;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0C56AF64BE26DB444D566E60 /* Folio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 053AAE1D1B4F8AD6CAC8296F /* Build configuration list for PBXNativeTarget "Folio" */;
+			buildPhases = (
+				3859F542EDB723E250691952 /* Sources */,
+				8AF20F2D7ED0809F38E8AD11 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Folio;
+			packageProductDependencies = (
+			);
+			productName = Folio;
+			productReference = 5B8BAAD0990BFEBF5AC22207 /* Folio.app */;
+			productType = "com.apple.product-type.application";
+		};
+		1CD6F615502B2F1F3198986F /* FolioTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C86FAFAEDE7927D9F3DE4B94 /* Build configuration list for PBXNativeTarget "FolioTests" */;
+			buildPhases = (
+				2DB195A7169B335485DDE5AE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				820F63B6E4A2E77B25370426 /* PBXTargetDependency */,
+			);
+			name = FolioTests;
+			packageProductDependencies = (
+			);
+			productName = FolioTests;
+			productReference = 6BB51A125EC50A54621232F6 /* FolioTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		383A8F7C70F35B855AA13D98 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					0C56AF64BE26DB444D566E60 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 337CB635EA8B81A92F1BCDDC /* Build configuration list for PBXProject "Folio" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 167E3E30A49919FD8D56D74D;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0C56AF64BE26DB444D566E60 /* Folio */,
+				1CD6F615502B2F1F3198986F /* FolioTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8AF20F2D7ED0809F38E8AD11 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF27DEBBFA7A13E28B3B759B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2DB195A7169B335485DDE5AE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD40C0A15A09F558DE867154 /* AssetViewModelTests.swift in Sources */,
+				67190899DC98DDB4B377BB69 /* FIFOEngineTests.swift in Sources */,
+				7A5E77A4D5CE405F86F42C8A /* PortfolioViewModelTests.swift in Sources */,
+				FF2E2EE25E31195F7A164D41 /* TimeSeriesEngineTests.swift in Sources */,
+				5F221C7A627CFCBF94276B9C /* WatchlistViewModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3859F542EDB723E250691952 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C4C4684998050AF32A3697B /* AddAssetView.swift in Sources */,
+				313BBE3F4D3EFF65F73CE5C4 /* AddWatchlistItemView.swift in Sources */,
+				D96450547084EA9F656D7BCB /* AssetDetailView.swift in Sources */,
+				D5AB90888249B38E0F8B7011 /* AssetQuote.swift in Sources */,
+				E3B9575AF448516F3052A309 /* AssetType.swift in Sources */,
+				7F4AE3A687C44C0BC33B0D08 /* AssetViewModel.swift in Sources */,
+				4FA27F37E8E851C74A3A4D94 /* ContentView.swift in Sources */,
+				78C486709EC9AEC5230C2F21 /* CurrencyService.swift in Sources */,
+				940C6BCC623C0D9E00791E3A /* DashboardView.swift in Sources */,
+				11DD0E40B0977A605CB7D647 /* Double+Format.swift in Sources */,
+				21B08D19994EBFAD758C3D64 /* EventsService.swift in Sources */,
+				1A47A07BF91905D953A99335 /* FIFOEngine.swift in Sources */,
+				B6ADB5796E64EF2F629B917F /* FolioApp.swift in Sources */,
+				0464EB4CAC79040472202C8C /* HistoricalPriceService.swift in Sources */,
+				935B06B7300C0866904FAD38 /* Holding.swift in Sources */,
+				059E485F0B8C384140A12F21 /* Insight.swift in Sources */,
+				670E09EFD0CA231032EBF5D2 /* PerformanceSnapshot.swift in Sources */,
+				733F31C54CA6E53A5FF03F0B /* PersistenceService.swift in Sources */,
+				C87949E11699A77C830E4DF9 /* Portfolio.swift in Sources */,
+				FCC4FB7FC051608C6775394B /* PortfolioInsightsService.swift in Sources */,
+				058A4A649C71BAA1B7BDF940 /* PortfolioListView.swift in Sources */,
+				463C3793C0130334D9AED41E /* PortfolioViewModel.swift in Sources */,
+				2A95F82CE8FA332570EB6BBF /* PriceService.swift in Sources */,
+				57FAB842536192D5239EC981 /* PriceServiceProtocol.swift in Sources */,
+				18563EF2EFD258FD36CF85E0 /* TimeSeriesEngine.swift in Sources */,
+				0E11D0AF44E5C604C7CFB049 /* Trade.swift in Sources */,
+				92E58E76DF8E9E456968C3A0 /* TradeDetailView.swift in Sources */,
+				0CEFA548B51707CD17105915 /* Transaction.swift in Sources */,
+				9ECD1D76063C62DA06BEADC3 /* UpcomingEvent.swift in Sources */,
+				8D91806BB0D77AB86FA12956 /* WatchlistItem.swift in Sources */,
+				2FA5258834FC065675BEB17D /* WatchlistView.swift in Sources */,
+				364B10C0FBCCA3FB95FBFEBC /* WatchlistViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		820F63B6E4A2E77B25370426 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0C56AF64BE26DB444D566E60 /* Folio */;
+			targetProxy = D3324344F318CB5AD9CFD593 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1F56EB963860C7169EDF99BD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Folio/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		540D8DA95C79696F3A4D84D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.folio.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Folio.app/Folio";
+			};
+			name = Debug;
+		};
+		887BC2854F0D4F70EEB71653 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.folio.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Folio.app/Folio";
+			};
+			name = Release;
+		};
+		D3B08A16EE8A1254AC557B5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DA92BB9625393CF84A265C86 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Folio/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E8BDB5BE91E7E273FFFF319A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		053AAE1D1B4F8AD6CAC8296F /* Build configuration list for PBXNativeTarget "Folio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA92BB9625393CF84A265C86 /* Debug */,
+				1F56EB963860C7169EDF99BD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		337CB635EA8B81A92F1BCDDC /* Build configuration list for PBXProject "Folio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3B08A16EE8A1254AC557B5A /* Debug */,
+				E8BDB5BE91E7E273FFFF319A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C86FAFAEDE7927D9F3DE4B94 /* Build configuration list for PBXNativeTarget "FolioTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				540D8DA95C79696F3A4D84D2 /* Debug */,
+				887BC2854F0D4F70EEB71653 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 383A8F7C70F35B855AA13D98 /* Project object */;
+}
