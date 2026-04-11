@@ -58,6 +58,13 @@ final class PortfolioViewModel: ObservableObject {
         FIFOEngine.computeHoldings(from: transactions)
     }
 
+    // MARK: - Trade Analytics
+
+    var tradeAnalytics: TradeAnalytics {
+        let allTrades = holdings.flatMap { FIFOEngine.closedTrades(from: $0.transactions) }
+        return TradeAnalyticsEngine.compute(trades: allTrades)
+    }
+
     // MARK: - Computed Portfolio Metrics
 
     var baseCurrencyCode: String {

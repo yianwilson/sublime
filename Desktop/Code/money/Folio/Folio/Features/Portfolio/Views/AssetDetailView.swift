@@ -102,6 +102,20 @@ struct AssetDetailView: View {
             }
         }
 
+        if let stats = vm.tradeAnalytics.bySymbol[holding.symbol], stats.totalTrades > 0 {
+            Section("Trade Analytics") {
+                row("Closed Trades", "\(stats.totalTrades)")
+                row("Win Rate", stats.winRate.asPercent(digits: 1),
+                    accent: stats.winRate >= 50 ? .green : .red)
+                row("Avg Hold", "\(Int(stats.avgHoldingDays))d")
+                row(
+                    "Total Realised",
+                    (stats.totalPnL * vm.audPerUSD).asChange(code: vm.baseCurrencyCode),
+                    accent: stats.totalPnL >= 0 ? .green : .red
+                )
+            }
+        }
+
         Section("Info") {
             row("Symbol", holding.symbol)
             row("Name", holding.name)

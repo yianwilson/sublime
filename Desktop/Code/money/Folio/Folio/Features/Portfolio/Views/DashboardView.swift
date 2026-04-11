@@ -34,6 +34,37 @@ struct DashboardView: View {
             .sorted { $0.pnl > $1.pnl }
     }
 
+    // MARK: - Computed Properties (S09 — Trade Performance Curve)
+
+    private var cumulativePnLSeries: [(date: Date, value: Double)] {
+        let trades = vm.holdings
+            .flatMap { FIFOEngine.closedTrades(from: $0.transactions) }
+            .sorted { $0.exitDate < $1.exitDate }
+        guard !trades.isEmpty else { return [] }
+        var cumulative = 0.0
+        return trades.map { trade in
+            cumulative += trade.pnl * vm.audPerUSD
+            return (date: trade.exitDate, value: cumulative)
+        }
+    }
+
+    // MARK: - Computed Properties (S10 — Drawdown Chart)
+
+    private var drawdownSeries: [(date: Date, value: Double)] {
+        let series = effectiveSeries
+        guard !series.isEmpty else { return [] }
+        var peak = series[0].totalValue
+        return series.map { snap in
+            if snap.totalValue > peak { peak = snap.totalValue }
+            let dd = peak > 0 ? (snap.totalValue - peak) / peak * 100 : 0
+            return (date: snap.date, value: dd)
+        }
+    }
+
+    private var maxDrawdown: Double {
+        drawdownSeries.min(by: { $0.value < $1.value })?.value ?? 0
+    }
+
     private var todaysMovers: [(Holding, Double)] {
         vm.holdings
             .map { ($0, vm.dailyChangeValue(for: $0)) }
@@ -50,6 +81,8 @@ struct DashboardView: View {
                 eventsCard
                 todaysMoversCard
                 realisedPnLCard
+                tradePerformanceCard
+                drawdownCard
                 insightsCard
                 performanceCard
                 allocationCard
@@ -467,6 +500,112 @@ struct DashboardView: View {
                         .foregroundStyle(.blue)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 4)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    // MARK: - Trade Performance Card (S09)
+
+    private var tradePerformanceCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Trade Performance")
+                    .font(.headline)
+                Text("Cumulative realised P&L")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if cumulativePnLSeries.isEmpty {
+                Text("No closed trades yet")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+            } else {
+                let finalValue = cumulativePnLSeries.last?.value ?? 0
+                let lineColor: Color = finalValue >= 0 ? .green : .red
+
+                Chart(cumulativePnLSeries, id: \.date) { point in
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Cumulative P&L", point.value)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(lineColor)
+
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Cumulative P&L", point.value)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(lineColor.opacity(0.12))
+                }
+                .frame(height: 160)
+                .chartYAxis {
+                    AxisMarks(position: .trailing) { value in
+                        AxisValueLabel {
+                            if let v = value.as(Double.self) {
+                                Text(v.asCurrency(code: vm.baseCurrencyCode))
+                                    .font(.caption2)
+                            }
+                        }
+                        AxisGridLine()
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    // MARK: - Drawdown Card (S10)
+
+    private var drawdownCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Drawdown")
+                .font(.headline)
+
+            if drawdownSeries.count < 2 {
+                Text("Not enough data")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+            } else {
+                HStack {
+                    Text("Max Drawdown")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(maxDrawdown.asPercent())
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(maxDrawdown == 0 ? .green : .red)
+                }
+                .padding(10)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+
+                Chart(drawdownSeries, id: \.date) { point in
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Drawdown %", point.value)
+                    )
+                    .foregroundStyle(Color.red.opacity(0.5))
+                }
+                .frame(height: 140)
+                .chartYAxis {
+                    AxisMarks(position: .trailing) { value in
+                        AxisValueLabel {
+                            if let v = value.as(Double.self) {
+                                Text("\(String(format: "%.1f", v))%")
+                                    .font(.caption2)
+                            }
+                        }
+                        AxisGridLine()
+                    }
                 }
             }
         }
