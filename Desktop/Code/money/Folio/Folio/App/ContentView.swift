@@ -27,6 +27,11 @@ struct ContentView: View {
             .tabItem {
                 Label("Watchlist", systemImage: "star")
             }
+
+            AnalyticsView()
+                .tabItem {
+                    Label("Analytics", systemImage: "chart.bar.xaxis")
+                }
         }
         .task {
             await vm.refreshPrices()

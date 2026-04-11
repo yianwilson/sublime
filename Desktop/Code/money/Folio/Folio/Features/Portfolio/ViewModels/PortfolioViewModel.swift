@@ -313,27 +313,38 @@ final class PortfolioViewModel: ObservableObject {
             .filter { !$0.isEmpty }
 
         guard let header = lines.first?.lowercased(),
-              header == "symbol,quantity,buyprice,assettype" else {
+              header == "symbol,quantity,price,type,date,assettype" else {
             throw CSVImportError.invalidHeader
         }
 
         var imported: [Transaction] = []
-        let importDate = Date()
 
         for (index, line) in lines.dropFirst().enumerated() {
             let columns = line.split(separator: ",", omittingEmptySubsequences: false).map {
                 $0.trimmingCharacters(in: .whitespacesAndNewlines)
             }
 
-            guard columns.count == 4 else {
+            guard columns.count == 6 else {
+                throw CSVImportError.invalidRow(index + 2)
+            }
+
+            let rawType = columns[3].lowercased()
+            let transactionType: TransactionType
+            switch rawType {
+            case "buy":
+                transactionType = .buy
+            case "sell":
+                transactionType = .sell
+            default:
                 throw CSVImportError.invalidRow(index + 2)
             }
 
             guard
                 !columns[0].isEmpty,
                 let quantity = Double(columns[1]), quantity > 0,
-                let buyPrice = Double(columns[2]), buyPrice > 0,
-                let assetType = parseAssetType(columns[3])
+                let price = Double(columns[2]), price > 0,
+                let date = parseDate(columns[4]),
+                let assetType = parseAssetType(columns[5])
             else {
                 throw CSVImportError.invalidRow(index + 2)
             }
@@ -345,16 +356,28 @@ final class PortfolioViewModel: ObservableObject {
                     assetType:   assetType,
                     name:        symbol,
                     coinGeckoId: "",
-                    type:        .buy,
+                    type:        transactionType,
                     quantity:    quantity,
-                    price:       buyPrice,
+                    price:       price,
                     fee:         0,
-                    date:        importDate
+                    date:        date
                 )
             )
         }
 
         return imported
+    }
+
+    private func parseDate(_ value: String) -> Date? {
+        let formatters = [
+            { () -> DateFormatter in
+                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX"); return f
+            }(),
+            { () -> DateFormatter in
+                let f = DateFormatter(); f.dateFormat = "dd/MM/yyyy"; f.locale = Locale(identifier: "en_US_POSIX"); return f
+            }()
+        ]
+        return formatters.compactMap { $0.date(from: value.trimmingCharacters(in: .whitespacesAndNewlines)) }.first
     }
 
     private func parseAssetType(_ value: String) -> AssetType? {
@@ -378,7 +401,7 @@ enum CSVImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidHeader:
-            return "CSV header must be: symbol,quantity,buyPrice,assetType"
+            return "CSV header must be: symbol,quantity,price,type,date,assetType"
         case .invalidRow(let row):
             return "Invalid CSV data on row \(row)."
         }
