@@ -62,14 +62,32 @@ final class PriceService: PriceServiceProtocol {
 
     private func fetchYahooQuotes(for items: [PriceLookup]) async -> [String: AssetQuote] {
         guard !items.isEmpty else { return [:] }
-        var result: [String: AssetQuote] = [:]
-        await withTaskGroup(of: (String, AssetQuote?).self) { group in
+        var quotes: [String: AssetQuote] = [:]
+        var sectors: [String: String] = [:]
+
+        await withTaskGroup(of: (String, AssetQuote?, String?).self) { group in
             for item in items {
-                group.addTask { (item.symbol, await self.fetchYahooQuote(symbol: item.symbol)) }
+                group.addTask {
+                    async let quote  = self.fetchYahooQuote(symbol: item.symbol)
+                    async let sector = self.fetchSector(symbol: item.symbol)
+                    return (item.symbol, await quote, await sector)
+                }
             }
-            for await (symbol, quote) in group {
-                if let quote { result[symbol] = quote }
+            for await (symbol, quote, sector) in group {
+                if let quote { quotes[symbol] = quote }
+                if let sector { sectors[symbol] = sector }
             }
+        }
+
+        // Merge sector data into quotes
+        var result: [String: AssetQuote] = [:]
+        for (symbol, quote) in quotes {
+            result[symbol] = AssetQuote(
+                currentPrice:  quote.currentPrice,
+                previousClose: quote.previousClose,
+                currencyCode:  quote.currencyCode,
+                sector:        sectors[symbol]
+            )
         }
         return result
     }
@@ -85,11 +103,23 @@ final class PriceService: PriceServiceProtocol {
             return AssetQuote(
                 currentPrice:  currentPrice,
                 previousClose: meta.previousClose ?? meta.chartPreviousClose,
-                currencyCode:  meta.currency ?? "USD"
+                currencyCode:  meta.currency ?? "USD",
+                sector:        nil
             )
         } catch {
             return nil
         }
+    }
+
+    private func fetchSector(symbol: String) async -> String? {
+        guard let url = URL(string: "https://query1.finance.yahoo.com/v10/finance/quoteSummary/\(symbol)?modules=assetProfile") else { return nil }
+        guard let (data, _) = try? await session.data(from: url) else { return nil }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let result = (json["quoteSummary"] as? [String: Any])?["result"] as? [[String: Any]],
+              let profile = result.first?["assetProfile"] as? [String: Any],
+              let sector = profile["sector"] as? String,
+              !sector.isEmpty else { return nil }
+        return sector
     }
 
     private func searchYahoo(query: String) async -> [AssetSearchResult] {
@@ -133,7 +163,7 @@ final class PriceService: PriceServiceProtocol {
             for (geckoId, priceMap) in decoded {
                 guard let symbol = geckoIdToSymbol[geckoId], let price = priceMap.usd else { continue }
                 let previousClose: Double? = priceMap.usd24hChange.map { price / (1 + $0 / 100) }
-                result[symbol] = AssetQuote(currentPrice: price, previousClose: previousClose, currencyCode: "USD")
+                result[symbol] = AssetQuote(currentPrice: price, previousClose: previousClose, currencyCode: "USD", sector: nil)
             }
             return result
         } catch { return [:] }

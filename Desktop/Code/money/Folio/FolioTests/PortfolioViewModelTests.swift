@@ -40,7 +40,7 @@ final class PortfolioViewModelTests: XCTestCase {
     func testPnlPercentReturnsZeroWhenBuyPriceEqualsCurrentPrice() async {
         let viewModel = makeViewModel(
             snapshots: [],
-            quotes: ["FLAT": AssetQuote(currentPrice: 50, previousClose: nil, currencyCode: "USD")]
+            quotes: ["FLAT": AssetQuote(currentPrice: 50, previousClose: nil, currencyCode: "USD", sector: nil)]
         )
         viewModel.addTransaction(makeTx(symbol: "FLAT", type: .buy, qty: 2, price: 50))
         await viewModel.refreshPrices()
@@ -55,7 +55,7 @@ final class PortfolioViewModelTests: XCTestCase {
     func testPnlPercentReturnsNegativeValueWhenPositionIsDown() async {
         let viewModel = makeViewModel(
             snapshots: [],
-            quotes: ["LOSS": AssetQuote(currentPrice: 80, previousClose: nil, currencyCode: "USD")]
+            quotes: ["LOSS": AssetQuote(currentPrice: 80, previousClose: nil, currencyCode: "USD", sector: nil)]
         )
         viewModel.addTransaction(makeTx(symbol: "LOSS", type: .buy, qty: 2, price: 100))
         await viewModel.refreshPrices()

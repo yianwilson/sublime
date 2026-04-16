@@ -86,6 +86,7 @@ struct DashboardView: View {
                 insightsCard
                 performanceCard
                 allocationCard
+                sectorAllocationCard
             }
             .padding()
         }
@@ -333,6 +334,41 @@ struct DashboardView: View {
         }
         .frame(height: 12)
         .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    // MARK: - Sector Allocation Card
+
+    private var sectorAllocationCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Sector Allocation")
+                .font(.headline)
+
+            if vm.allocationBySector.isEmpty {
+                Text("Add stocks or ETFs to see sector breakdown")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 8)
+            } else {
+                ForEach(vm.allocationBySector, id: \.0) { sector, pct in
+                    HStack(spacing: 10) {
+                        Text(sector)
+                            .font(.subheadline)
+                        Spacer()
+                        Text(pct.asPercent(digits: 1))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        // Simple bar
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.accentColor.opacity(0.7))
+                            .frame(width: max(4, CGFloat(pct) * 1.2), height: 8)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
     }
 
     // MARK: - Events Card

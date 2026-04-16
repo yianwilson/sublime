@@ -4,6 +4,7 @@ struct AssetQuote: Codable, Equatable {
     let currentPrice: Double
     let previousClose: Double?
     let currencyCode: String
+    let sector: String?
 
     var dailyChange: Double {
         guard let previousClose else { return 0 }

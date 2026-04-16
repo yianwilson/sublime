@@ -115,6 +115,18 @@ final class PortfolioViewModel: ObservableObject {
         }.sorted { $0.1 > $1.1 }
     }
 
+    var allocationBySector: [(String, Double)] {
+        guard totalPortfolioValue > 0 else { return [] }
+        var sectorValues: [String: Double] = [:]
+        for holding in holdings {
+            let sector = quotes[holding.symbol]?.sector ?? "Other"
+            sectorValues[sector, default: 0] += currentValue(for: holding)
+        }
+        return sectorValues
+            .map { ($0.key, $0.value / totalPortfolioValue * 100) }
+            .sorted { $0.1 > $1.1 }
+    }
+
     var performanceSeries: [PerformanceSnapshot] {
         snapshots
     }

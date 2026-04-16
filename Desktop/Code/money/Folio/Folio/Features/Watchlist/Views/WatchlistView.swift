@@ -1,12 +1,30 @@
 import SwiftUI
 
+private enum WatchlistSortOrder: String, CaseIterable {
+    case name   = "Name"
+    case price  = "Price"
+    case change = "Change %"
+}
+
 struct WatchlistView: View {
     @EnvironmentObject private var vm: WatchlistViewModel
     @State private var showAddItem = false
+    @State private var sortOrder: WatchlistSortOrder = .name
+
+    private var sortedItems: [WatchlistItem] {
+        switch sortOrder {
+        case .name:
+            return vm.items.sorted { $0.symbol < $1.symbol }
+        case .price:
+            return vm.items.sorted { (vm.quote(for: $0)?.currentPrice ?? 0) > (vm.quote(for: $1)?.currentPrice ?? 0) }
+        case .change:
+            return vm.items.sorted { (vm.quote(for: $0)?.dailyChangePercent ?? 0) > (vm.quote(for: $1)?.dailyChangePercent ?? 0) }
+        }
+    }
 
     var body: some View {
         List {
-            ForEach(vm.items) { item in
+            ForEach(sortedItems) { item in
                 WatchlistRow(item: item)
             }
             .onDelete(perform: vm.deleteItems)
@@ -26,10 +44,21 @@ struct WatchlistView: View {
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showAddItem = true
-                } label: {
-                    Image(systemName: "plus")
+                HStack(spacing: 16) {
+                    Menu {
+                        Picker("Sort", selection: $sortOrder) {
+                            ForEach(WatchlistSortOrder.allCases, id: \.self) { order in
+                                Text(order.rawValue).tag(order)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down")
+                    }
+                    Button {
+                        showAddItem = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -80,20 +109,24 @@ private struct WatchlistRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.symbol)
                     .font(.headline)
-                Text(item.name)
+                Text(item.assetType.rawValue.capitalized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text((quote?.currentPrice ?? 0).asCurrency(code: quote?.currencyCode ?? "USD"))
-                    .font(.subheadline.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                 Text(dailyChangePercent.asPercent())
-                    .font(.caption.weight(.medium))
+                    .font(.caption)
                     .foregroundStyle(dailyChangePercent >= 0 ? .green : .red)
+                if let q = quote, q.previousClose != nil {
+                    Text(q.dailyChange.asChange(code: q.currencyCode))
+                        .font(.caption2)
+                        .foregroundStyle(q.dailyChange >= 0 ? .green : .red)
+                }
             }
         }
         .padding(.vertical, 4)

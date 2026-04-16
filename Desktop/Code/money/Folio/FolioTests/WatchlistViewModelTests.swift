@@ -64,7 +64,7 @@ final class WatchlistViewModelTests: XCTestCase {
 private struct MockWatchlistPriceService: PriceServiceProtocol {
     func fetchQuotes(for items: [PriceLookup]) async -> [String: AssetQuote] {
         Dictionary(uniqueKeysWithValues: items.map {
-            ($0.symbol, AssetQuote(currentPrice: 100, previousClose: 95, currencyCode: "USD"))
+            ($0.symbol, AssetQuote(currentPrice: 100, previousClose: 95, currencyCode: "USD", sector: nil))
         })
     }
 
