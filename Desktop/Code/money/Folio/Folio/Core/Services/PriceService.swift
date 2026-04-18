@@ -86,7 +86,9 @@ final class PriceService: PriceServiceProtocol {
                 currentPrice:  quote.currentPrice,
                 previousClose: quote.previousClose,
                 currencyCode:  quote.currencyCode,
-                sector:        sectors[symbol]
+                sector:        sectors[symbol],
+                preMarketPrice: quote.preMarketPrice,
+                postMarketPrice: quote.postMarketPrice
             )
         }
         return result
@@ -104,7 +106,9 @@ final class PriceService: PriceServiceProtocol {
                 currentPrice:  currentPrice,
                 previousClose: meta.previousClose ?? meta.chartPreviousClose,
                 currencyCode:  meta.currency ?? "USD",
-                sector:        nil
+                sector:        nil,
+                preMarketPrice: meta.preMarketPrice,
+                postMarketPrice: meta.postMarketPrice
             )
         } catch {
             return nil
@@ -163,7 +167,7 @@ final class PriceService: PriceServiceProtocol {
             for (geckoId, priceMap) in decoded {
                 guard let symbol = geckoIdToSymbol[geckoId], let price = priceMap.usd else { continue }
                 let previousClose: Double? = priceMap.usd24hChange.map { price / (1 + $0 / 100) }
-                result[symbol] = AssetQuote(currentPrice: price, previousClose: previousClose, currencyCode: "USD", sector: nil)
+                result[symbol] = AssetQuote(currentPrice: price, previousClose: previousClose, currencyCode: "USD", sector: nil, preMarketPrice: nil, postMarketPrice: nil)
             }
             return result
         } catch { return [:] }
@@ -193,6 +197,8 @@ private struct YahooMeta: Decodable {
     let previousClose: Double?
     let chartPreviousClose: Double?
     let currency: String?
+    let preMarketPrice: Double?
+    let postMarketPrice: Double?
 }
 private struct YahooSearchResponse: Decodable { let quotes: [YahooQuote] }
 private struct YahooQuote: Decodable {

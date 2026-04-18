@@ -3,6 +3,7 @@ import SwiftUI
 private enum DetailTab: String, CaseIterable {
     case overview = "Overview"
     case trades   = "Trades"
+    case alerts   = "Alerts"
 }
 
 struct AssetDetailView: View {
@@ -36,8 +37,10 @@ struct AssetDetailView: View {
 
             if selectedTab == .overview {
                 overviewSections
-            } else {
+            } else if selectedTab == .trades {
                 tradesSections
+            } else {
+                alertsSection
             }
         }
         .listStyle(.insetGrouped)
@@ -81,6 +84,18 @@ struct AssetDetailView: View {
                 holding.unrealisedPnLPercent(price: price).asPercent(),
                 accent: holding.unrealisedPnLPercent(price: price) >= 0 ? .green : .red
             )
+            if let quote = vm.quotes[holding.symbol],
+               let extPrice = quote.extendedHoursPrice,
+               !quote.extendedHoursLabel.isEmpty {
+                let change = extPrice - price
+                let changePct = price > 0 ? change / price * 100 : 0
+                row(quote.extendedHoursLabel, extPrice.asCurrency())
+                row(
+                    "\(quote.extendedHoursLabel) Chg",
+                    "\(change >= 0 ? "+" : "")\(String(format: "%.2f", change)) (\(String(format: "%.2f", changePct))%)",
+                    accent: change >= 0 ? .green : .red
+                )
+            }
         }
 
         Section("Position") {
@@ -230,5 +245,70 @@ struct AssetDetailView: View {
             Spacer()
             Text(value).foregroundStyle(accent).fontWeight(.medium)
         }
+    }
+
+    // MARK: - Alerts
+
+    @ViewBuilder
+    private var alertsSection: some View {
+        Section("Active Alerts") {
+            let symbolAlerts = vm.alerts.filter { $0.symbol == holding.symbol && $0.isActive }
+            if symbolAlerts.isEmpty {
+                Text("No active alerts")
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+            } else {
+                ForEach(symbolAlerts) { alert in
+                    HStack {
+                        Image(systemName: alert.direction == .above ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                            .foregroundStyle(alert.direction == .above ? .green : .red)
+                        Text("\(alert.direction.rawValue) \(alert.targetPrice.asCurrency())")
+                            .font(.subheadline)
+                        Spacer()
+                        Button {
+                            vm.deleteAlert(alert)
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+
+        Section("Add Alert") {
+            AddAlertView(symbol: holding.symbol)
+        }
+    }
+}
+
+private struct AddAlertView: View {
+    let symbol: String
+    @EnvironmentObject private var vm: PortfolioViewModel
+    @State private var targetPriceText = ""
+    @State private var direction: AlertDirection = .above
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Picker("Direction", selection: $direction) {
+                Text("Above").tag(AlertDirection.above)
+                Text("Below").tag(AlertDirection.below)
+            }
+            .pickerStyle(.segmented)
+
+            HStack {
+                TextField("Target price", text: $targetPriceText)
+                    .keyboardType(.decimalPad)
+                Button("Add") {
+                    guard let price = Double(targetPriceText), price > 0 else { return }
+                    vm.addAlert(PriceAlert(symbol: symbol, targetPrice: price, direction: direction))
+                    targetPriceText = ""
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(Double(targetPriceText) == nil)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }

@@ -34,6 +34,7 @@ struct ContentView: View {
                 }
         }
         .task {
+            await AlertsService.shared.requestPermission()
             await vm.refreshPrices()
             await watchlistVM.refreshQuotes()
         }

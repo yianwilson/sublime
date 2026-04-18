@@ -4,12 +4,14 @@ final class PersistenceService {
     private let portfolioFileURL: URL
     private let snapshotsFileURL: URL
     private let watchlistFileURL: URL
+    private let alertsFileURL: URL
 
     init(directoryURL: URL? = nil) {
         let baseURL = directoryURL ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.portfolioFileURL = baseURL.appendingPathComponent("portfolio.json")
         self.snapshotsFileURL = baseURL.appendingPathComponent("performance-snapshots.json")
         self.watchlistFileURL = baseURL.appendingPathComponent("watchlist.json")
+        self.alertsFileURL = baseURL.appendingPathComponent("alerts.json")
     }
 
     func loadTransactions() -> [Transaction] {
@@ -64,5 +66,17 @@ final class PersistenceService {
     func saveWatchlist(_ items: [WatchlistItem]) {
         guard let data = try? JSONEncoder().encode(items) else { return }
         try? data.write(to: watchlistFileURL, options: .atomic)
+    }
+
+    func loadAlerts() -> [PriceAlert] {
+        guard let data = try? Data(contentsOf: alertsFileURL),
+              let alerts = try? JSONDecoder().decode([PriceAlert].self, from: data)
+        else { return [] }
+        return alerts
+    }
+
+    func saveAlerts(_ alerts: [PriceAlert]) {
+        guard let data = try? JSONEncoder().encode(alerts) else { return }
+        try? data.write(to: alertsFileURL, options: .atomic)
     }
 }

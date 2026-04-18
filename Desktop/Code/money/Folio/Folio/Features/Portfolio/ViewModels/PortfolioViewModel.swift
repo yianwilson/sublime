@@ -25,6 +25,7 @@ final class PortfolioViewModel: ObservableObject {
     @Published private(set) var upcomingEvents: [UpcomingEvent] = []
     @Published private(set) var reconstructedSeries: [PerformanceSnapshot] = []
     @Published private(set) var isReconstructing = false
+    @Published private(set) var alerts: [PriceAlert] = []
 
     // MARK: - Dependencies
 
@@ -50,6 +51,7 @@ final class PortfolioViewModel: ObservableObject {
         self.audPerUSD = currencyService.cachedAUDPerUSD
         self.transactions = persistence.loadTransactions()
         self.snapshots = persistence.loadSnapshots()
+        self.alerts = persistence.loadAlerts()
     }
 
     // MARK: - Derived Holdings
@@ -202,6 +204,11 @@ final class PortfolioViewModel: ObservableObject {
             appendError("Using cached AUD conversion rate.")
         }
 
+        if !alerts.isEmpty {
+            alerts = AlertsService.shared.checkAlerts(alerts, quotes: quotes)
+            persistence.saveAlerts(alerts)
+        }
+
         recordSnapshot()
         let stockSymbols = holdings.filter { $0.assetType == .stock || $0.assetType == .etf }.map(\.symbol)
         upcomingEvents = await eventsService.fetchEvents(ownedSymbols: stockSymbols)
@@ -246,6 +253,21 @@ final class PortfolioViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func addAlert(_ alert: PriceAlert) {
+        alerts.append(alert)
+        persistence.saveAlerts(alerts)
+    }
+
+    func deleteAlert(at offsets: IndexSet) {
+        alerts.remove(atOffsets: offsets)
+        persistence.saveAlerts(alerts)
+    }
+
+    func deleteAlert(_ alert: PriceAlert) {
+        alerts.removeAll { $0.id == alert.id }
+        persistence.saveAlerts(alerts)
     }
 
     // MARK: - Holding Values
