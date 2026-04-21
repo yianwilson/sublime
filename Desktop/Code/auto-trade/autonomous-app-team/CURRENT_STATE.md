@@ -1,14 +1,14 @@
 # Current State — Trading App
 
 > **Purpose:** Quick-start context for any new session. Read this first. Do NOT re-read all sprint history or agent logs.
-> **Last updated:** 2026-04-21 (Sprint 14 COMPLETE + H16 deployed)
+> **Last updated:** 2026-04-21 (Sprint 15 COMPLETE)
 
 ---
 
 ## Where We Are
 
-- **Sprint:** 14 COMPLETE — starting Sprint 15 next session
-- **Tests:** 245 passing, 0 failing
+- **Sprint:** 15 COMPLETE — starting Sprint 16 next session
+- **Tests:** 256 passing, 0 failing
 - **Smoke check:** 5/5 endpoints 200
 - **Branch:** minimal-clean
 
@@ -79,14 +79,28 @@ Entry: current price ±1% | Target: 52w high | Stop: SMA20 or -6%
 
 ---
 
-## Sprint 15 Candidates
+## Sprint 15 Summary (DONE)
+
+| Story | Status | What Was Built |
+|-------|--------|---------------|
+| H13 | ✅ | Day-of-week entry analysis — Thursday in CAUTION is near coin-flip (+0.12% avg) |
+| H15 infra | ✅ | Simulator now enters top-3 breakout trades daily (tagged `auto-paper-trade-breakout`), enabling forward H15 test in ~30 days |
+| S46 | ✅ | Screener: `bear_min_conviction` query param filters results in BEAR regime |
+
+**H13 key finding:** The overall Thursday underperformance is a CAUTION-regime effect. Thursday in CAUTION: +0.12% avg / 52.1% win rate (coin-flip). Monday in CAUTION: +3.26% avg. No hard simulator filter added — documented as guidance.
+
+**H15 status:** Not yet testable (need ~30 days of forward breakout trades). Infra live as of 2026-04-21.
+
+---
+
+## Sprint 16 Candidates
 
 | Story | Priority | Description |
 |-------|----------|-------------|
-| H15 | P1 | Does breakout mode outperform swing in BULL? (newly testable — screener now finds real setups) |
-| H13 | P2 | Time-of-entry analysis — Monday vs Friday entry returns |
+| H15 | P1 | Does breakout mode outperform swing in BULL? (needs ~30 days of forward breakout trades) |
 | S42 | P2 | Weight re-optimisation — after ≥30 FRED-scored forward trades |
-| S46 | P3 | Swing screener: explicit conviction floor in BEAR |
+| S47 | P2 | Position sizing: vary by conviction (currently flat 3%; change to 1.5%–5% range) |
+| H13b | P3 | Validate Thursday/CAUTION finding on forward trades; optionally add simulator day preference |
 
 ---
 
@@ -94,10 +108,11 @@ Entry: current price ±1% | Target: 52w high | Stop: SMA20 or -6%
 
 | File | Purpose |
 |------|---------|
-| `app/services/screener.py` | Pre-breakout base screener (redesigned Sprint 14) |
+| `app/services/screener.py` | Pre-breakout base screener; BEAR conviction floor (S46) |
 | `app/scoring/modes/swing.py` | Swing scorer — regime-dependent weights (H16) |
 | `config/scoring.yaml` | Weights + regime_weights + thresholds |
-| `app/services/paper_trade_simulator.py` | Auto forward paper trade entry/exit (regime-aware hold limits) |
+| `app/services/paper_trade_simulator.py` | Simulator — swing + breakout daily entries (H15 infra) |
+| `scripts/h13_day_of_week_analysis.py` | H13 day-of-week attribution script |
 | `app/core/scheduler.py` | Scheduled jobs (simulator at 21:30 UTC) |
 | `frontend/src/pages/Screener.tsx` | Screener UI — regime filter + position sizing |
 | `frontend/src/pages/Leaderboard.tsx` | Main UI — BEAR caution badge + regime banner |
