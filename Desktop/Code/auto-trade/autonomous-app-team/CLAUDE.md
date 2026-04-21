@@ -139,6 +139,10 @@ Do NOT run the Analyst Agent every sprint. Run only when:
 - Win rate has shifted by more than 5 percentage points
 - A/B experiment has enough data to evaluate
 
+**Mandatory at every 500-trade trigger:** Run the **component × regime attribution check** (defined in `agents/analyst.md`). For each regime × component combination, compare win rate of high vs low component-score trades. Flag any combination where high score hurts by >5pp. Update `config/scoring.yaml` → `regime_weights` and document as a new Hxx finding.
+
+This check is non-negotiable. H16 (2026-04-18) showed that fixed weights can be actively harmful in certain regimes (-10.9pp for trend in BEAR) and this went undetected for 10+ sprints because the check was never performed.
+
 ## State Management
 
 All state lives in `state/`:
