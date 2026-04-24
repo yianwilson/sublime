@@ -17,6 +17,18 @@ struct AnalyticsView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Analytics")
             .refreshable { await vm.refreshPrices() }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !allClosedTrades.isEmpty {
+                        ShareLink(
+                            item: generateTradeCSV(),
+                            preview: SharePreview("Trade History.csv", icon: Image(systemName: "tablecells"))
+                        ) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -165,12 +177,63 @@ struct AnalyticsView: View {
                                 }
                                 symbolRow(stats: stats)
                             }
+                            Divider()
+                            HStack {
+                                Text("Total Realised")
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                let total = analytics.bySymbol.values.reduce(0) { $0 + $1.totalPnL }
+                                Text((total * vm.audPerUSD).asChange(code: vm.baseCurrencyCode))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(total >= 0 ? .green : .red)
+                            }
                         }
                     }
                     .padding(16)
                 }
             }
         }
+    }
+
+    // MARK: - CSV Export
+
+    private var allClosedTrades: [Trade] {
+        vm.holdings
+            .flatMap { FIFOEngine.closedTrades(from: $0.transactions) }
+            .sorted { $0.exitDate < $1.exitDate }
+    }
+
+    private func generateTradeCSV() -> String {
+        let header = "Symbol,AssetType,Quantity,EntryDate,EntryPrice(USD),ExitDate,ExitPrice(USD),PnL(USD),PnL(AUD),HoldingDays,FinancialYear"
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        let rows = allClosedTrades.map { trade -> String in
+            let entryDate = formatter.string(from: trade.entryDate)
+            let exitDate = formatter.string(from: trade.exitDate)
+            let pnlAUD = trade.pnl * vm.audPerUSD
+            // Australian financial year: July 1 – June 30
+            let cal = Calendar.current
+            let exitYear = cal.component(.year, from: trade.exitDate)
+            let exitMonth = cal.component(.month, from: trade.exitDate)
+            let fy = exitMonth >= 7 ? "FY\(exitYear)-\(exitYear + 1)" : "FY\(exitYear - 1)-\(exitYear)"
+
+            return [
+                trade.symbol,
+                trade.assetType.rawValue,
+                String(format: "%.4f", trade.quantity),
+                entryDate,
+                String(format: "%.4f", trade.entryPrice),
+                exitDate,
+                String(format: "%.4f", trade.exitPrice),
+                String(format: "%.2f", trade.pnl),
+                String(format: "%.2f", pnlAUD),
+                "\(trade.holdingDays)",
+                fy
+            ].joined(separator: ",")
+        }
+
+        return ([header] + rows).joined(separator: "\n")
     }
 
     private func symbolRow(stats: SymbolStats) -> some View {

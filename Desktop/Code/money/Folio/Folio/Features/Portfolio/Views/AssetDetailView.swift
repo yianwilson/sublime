@@ -4,6 +4,7 @@ private enum DetailTab: String, CaseIterable {
     case overview = "Overview"
     case trades   = "Trades"
     case alerts   = "Alerts"
+    case news     = "News"
 }
 
 struct AssetDetailView: View {
@@ -11,6 +12,9 @@ struct AssetDetailView: View {
     @EnvironmentObject private var vm: PortfolioViewModel
     @State private var selectedTab: DetailTab = .overview
     @State private var selectedTrade: Trade? = nil
+    @State private var newsItems: [NewsItem] = []
+    @State private var isLoadingNews = false
+    private let newsService = NewsService()
 
     private var price: Double { vm.livePrice(for: holding) }
 
@@ -39,13 +43,20 @@ struct AssetDetailView: View {
                 overviewSections
             } else if selectedTab == .trades {
                 tradesSections
-            } else {
+            } else if selectedTab == .alerts {
                 alertsSection
+            } else {
+                newsSection
             }
         }
         .listStyle(.insetGrouped)
         .sheet(item: $selectedTrade) { trade in
             TradeDetailView(trade: trade).environmentObject(vm)
+        }
+        .task(id: holding.symbol) {
+            isLoadingNews = true
+            newsItems = await newsService.fetchNews(for: holding.symbol)
+            isLoadingNews = false
         }
         .navigationTitle(holding.symbol)
         .navigationBarTitleDisplayMode(.large)
@@ -244,6 +255,58 @@ struct AssetDetailView: View {
             Text(label).foregroundStyle(.secondary)
             Spacer()
             Text(value).foregroundStyle(accent).fontWeight(.medium)
+        }
+    }
+
+    // MARK: - News
+
+    @ViewBuilder
+    private var newsSection: some View {
+        if isLoadingNews {
+            Section {
+                HStack {
+                    Spacer()
+                    ProgressView("Loading news…")
+                    Spacer()
+                }
+                .padding()
+            }
+        } else if newsItems.isEmpty {
+            Section {
+                Text("No recent news found for \(holding.symbol)")
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+            }
+        } else {
+            Section {
+                ForEach(newsItems) { item in
+                    newsRow(item)
+                }
+            }
+        }
+    }
+
+    private func newsRow(_ item: NewsItem) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(item.title)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(2)
+            HStack {
+                Text(item.publisher)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(item.publishedAt, style: .relative)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let url = item.url {
+                UIApplication.shared.open(url)
+            }
         }
     }
 
