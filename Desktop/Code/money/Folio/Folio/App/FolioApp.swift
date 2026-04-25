@@ -2,12 +2,12 @@ import SwiftUI
 
 @main
 struct FolioApp: App {
-    @StateObject private var portfolioVM = PortfolioViewModel()
+    @StateObject private var portfoliosVM = PortfoliosViewModel()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(portfolioVM)
+            RootView()
+                .environmentObject(portfoliosVM)
                 .preferredColorScheme(.dark)
         }
     }

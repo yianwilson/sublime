@@ -2,6 +2,7 @@ import Foundation
 
 final class PersistenceService {
     private let portfolioFileURL: URL
+    private let portfoliosFileURL: URL
     private let snapshotsFileURL: URL
     private let watchlistFileURL: URL
     private let alertsFileURL: URL
@@ -9,6 +10,7 @@ final class PersistenceService {
     init(directoryURL: URL? = nil) {
         let baseURL = directoryURL ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.portfolioFileURL = baseURL.appendingPathComponent("portfolio.json")
+        self.portfoliosFileURL = baseURL.appendingPathComponent("portfolios.json")
         self.snapshotsFileURL = baseURL.appendingPathComponent("performance-snapshots.json")
         self.watchlistFileURL = baseURL.appendingPathComponent("watchlist.json")
         self.alertsFileURL = baseURL.appendingPathComponent("alerts.json")
@@ -25,6 +27,36 @@ final class PersistenceService {
     func saveTransactions(_ transactions: [Transaction]) {
         guard let data = try? JSONEncoder().encode(Portfolio(transactions: transactions)) else { return }
         try? data.write(to: portfolioFileURL, options: .atomic)
+    }
+
+    // MARK: - Multi-portfolio
+
+    func loadNamedPortfolios() -> [NamedPortfolio] {
+        if let data = try? Data(contentsOf: portfoliosFileURL),
+           let portfolios = try? JSONDecoder().decode([NamedPortfolio].self, from: data),
+           !portfolios.isEmpty {
+            return portfolios
+        }
+        // First launch or migration: wrap existing transactions into a default portfolio
+        let txs = loadTransactions()
+        var p = NamedPortfolio(name: "My Portfolio")
+        p.transactions = txs
+        return [p]
+    }
+
+    func saveNamedPortfolios(_ portfolios: [NamedPortfolio]) {
+        guard let data = try? JSONEncoder().encode(portfolios) else { return }
+        try? data.write(to: portfoliosFileURL, options: .atomic)
+    }
+
+    func loadTransactions(for portfolioId: UUID, from portfolios: [NamedPortfolio]) -> [Transaction] {
+        portfolios.first { $0.id == portfolioId }?.transactions ?? []
+    }
+
+    func saveTransactions(_ transactions: [Transaction], for portfolioId: UUID, in portfolios: inout [NamedPortfolio]) {
+        guard let idx = portfolios.firstIndex(where: { $0.id == portfolioId }) else { return }
+        portfolios[idx].transactions = transactions
+        saveNamedPortfolios(portfolios)
     }
 
     func loadSnapshots() -> [PerformanceSnapshot] {

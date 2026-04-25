@@ -29,6 +29,9 @@ final class PortfolioViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
+    private(set) var portfolioId: UUID = UUID()
+    weak var portfoliosVM: PortfoliosViewModel?
+
     private let priceService: PriceServiceProtocol
     private let persistence: PersistenceService
     private let insightsService: PortfolioInsightsService
@@ -36,6 +39,28 @@ final class PortfolioViewModel: ObservableObject {
     private let eventsService: EventsServiceProtocol
     private let historicalPriceService = HistoricalPriceService()
 
+    /// Designated init for multi-portfolio use: loads transactions from a specific NamedPortfolio.
+    init(
+        portfolio: NamedPortfolio,
+        priceService: PriceServiceProtocol = PriceService(),
+        persistence: PersistenceService = PersistenceService(),
+        insightsService: PortfolioInsightsService = PortfolioInsightsService(),
+        currencyService: CurrencyServiceProtocol = CurrencyService(),
+        eventsService: EventsServiceProtocol = EventsService()
+    ) {
+        self.portfolioId = portfolio.id
+        self.priceService = priceService
+        self.persistence = persistence
+        self.insightsService = insightsService
+        self.currencyService = currencyService
+        self.eventsService = eventsService
+        self.audPerUSD = currencyService.cachedAUDPerUSD
+        self.transactions = portfolio.transactions
+        self.snapshots = persistence.loadSnapshots()
+        self.alerts = persistence.loadAlerts()
+    }
+
+    /// Legacy no-arg init — retained for unit tests and backward compatibility.
     init(
         priceService: PriceServiceProtocol = PriceService(),
         persistence: PersistenceService = PersistenceService(),
@@ -167,6 +192,7 @@ final class PortfolioViewModel: ObservableObject {
     func addTransaction(_ transaction: Transaction) {
         transactions.append(transaction)
         persistence.saveTransactions(transactions)
+        portfoliosVM?.updateTransactions(transactions, for: portfolioId)
         Task {
             await refreshPrices()
         }
@@ -175,6 +201,7 @@ final class PortfolioViewModel: ObservableObject {
     func deleteHolding(_ holding: Holding) {
         transactions.removeAll { $0.symbol == holding.symbol && $0.assetType == holding.assetType }
         persistence.saveTransactions(transactions)
+        portfoliosVM?.updateTransactions(transactions, for: portfolioId)
         recordSnapshot()
     }
 
@@ -249,6 +276,7 @@ final class PortfolioViewModel: ObservableObject {
 
             transactions.append(contentsOf: imported)
             persistence.saveTransactions(transactions)
+            portfoliosVM?.updateTransactions(transactions, for: portfolioId)
             await refreshPrices()
         } catch {
             errorMessage = error.localizedDescription
