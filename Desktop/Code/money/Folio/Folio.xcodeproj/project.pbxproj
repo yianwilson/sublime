@@ -52,6 +52,7 @@
 		D5AB90888249B38E0F8B7011 /* AssetQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A8A7D05C52A941A77904A /* AssetQuote.swift */; };
 		D96450547084EA9F656D7BCB /* AssetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD7C8C003949A4C8DF8FF59 /* AssetDetailView.swift */; };
 		E3B9575AF448516F3052A309 /* AssetType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0511269A6146088E532D4276 /* AssetType.swift */; };
+		E5D9940C487F766DCC0B52AF /* TransactionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010E547717A95F5409410912 /* TransactionHistoryView.swift */; };
 		FCC4FB7FC051608C6775394B /* PortfolioInsightsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB4C996DD4AA6F1472C02859 /* PortfolioInsightsService.swift */; };
 		FF1FA90550F202A819937D8D /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A854E1794E1BDAB269B5B26 /* AnalyticsView.swift */; };
 		FF2E2EE25E31195F7A164D41 /* TimeSeriesEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15602CD7E219F0CCC8E55F21 /* TimeSeriesEngineTests.swift */; };
@@ -68,6 +69,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		010E547717A95F5409410912 /* TransactionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionHistoryView.swift; sourceTree = "<group>"; };
 		03ABCFE2065F0750A4019025 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		0511269A6146088E532D4276 /* AssetType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetType.swift; sourceTree = "<group>"; };
 		0987CF55427CE3605B916650 /* PortfoliosViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfoliosViewModel.swift; sourceTree = "<group>"; };
@@ -156,6 +158,7 @@
 				BDEF649E6F45C0F68A2B7A19 /* DashboardView.swift */,
 				99FF1239494F69A7F358FDC4 /* PortfolioListView.swift */,
 				2829AA309AC5FCCCA3071D23 /* TradeDetailView.swift */,
+				010E547717A95F5409410912 /* TransactionHistoryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -455,6 +458,7 @@
 				010B55B66B57C771A6083E56 /* TradeAnalyticsEngine.swift in Sources */,
 				92E58E76DF8E9E456968C3A0 /* TradeDetailView.swift in Sources */,
 				0CEFA548B51707CD17105915 /* Transaction.swift in Sources */,
+				E5D9940C487F766DCC0B52AF /* TransactionHistoryView.swift in Sources */,
 				9ECD1D76063C62DA06BEADC3 /* UpcomingEvent.swift in Sources */,
 				8D91806BB0D77AB86FA12956 /* WatchlistItem.swift in Sources */,
 				2FA5258834FC065675BEB17D /* WatchlistView.swift in Sources */,

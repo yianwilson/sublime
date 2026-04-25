@@ -10,6 +10,9 @@ struct DashboardView: View {
     @EnvironmentObject private var vm: PortfolioViewModel
     @AppStorage("dashboard.performanceRange") private var selectedRangeRawValue = PerformanceRange.oneMonth.rawValue
     @State private var chartMode: ChartMode = .dollar
+    @State private var marketNews: [NewsItem] = []
+    @State private var isLoadingNews = false
+    private let newsService = NewsService()
 
     private var selectedRange: PerformanceRange {
         get { PerformanceRange(rawValue: selectedRangeRawValue) ?? .oneMonth }
@@ -87,13 +90,22 @@ struct DashboardView: View {
                 performanceCard
                 allocationCard
                 sectorAllocationCard
+                marketNewsCard
             }
             .padding()
+        }
+        .task {
+            isLoadingNews = true
+            marketNews = await newsService.fetchMarketNews()
+            isLoadingNews = false
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Dashboard")
         .refreshable {
-            await vm.refreshPrices()
+            async let prices: () = vm.refreshPrices()
+            async let news: [NewsItem] = newsService.fetchMarketNews()
+            await prices
+            marketNews = await news
         }
     }
 
@@ -362,6 +374,57 @@ struct DashboardView: View {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.accentColor.opacity(0.7))
                             .frame(width: max(4, CGFloat(pct) * 1.2), height: 8)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    // MARK: - Market News Card
+
+    private var marketNewsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Market News")
+                    .font(.headline)
+                Spacer()
+                if isLoadingNews {
+                    ProgressView().scaleEffect(0.7)
+                }
+            }
+
+            if marketNews.isEmpty && !isLoadingNews {
+                Text("Pull to refresh to load market news.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(marketNews.prefix(5)) { item in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(item.title)
+                            .font(.subheadline.weight(.medium))
+                            .lineLimit(2)
+                        HStack {
+                            Text(item.publisher)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(item.publishedAt, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if let url = item.url {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+
+                    if item.id != marketNews.prefix(5).last?.id {
+                        Divider()
                     }
                 }
             }

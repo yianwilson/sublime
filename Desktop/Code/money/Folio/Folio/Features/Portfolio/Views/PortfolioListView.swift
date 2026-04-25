@@ -45,23 +45,30 @@ struct PortfolioListView: View {
         .navigationTitle("Portfolio")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                if vm.isLoading {
-                    ProgressView()
-                } else {
-                    Menu {
-                        Button {
-                            Task { await vm.refreshPrices() }
-                        } label: {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
+                HStack {
+                    if vm.isLoading {
+                        ProgressView()
+                    } else {
+                        Menu {
+                            Button {
+                                Task { await vm.refreshPrices() }
+                            } label: {
+                                Label("Refresh", systemImage: "arrow.clockwise")
+                            }
 
-                        Button {
-                            showImporter = true
+                            Button {
+                                showImporter = true
+                            } label: {
+                                Label("Import CSV", systemImage: "square.and.arrow.down")
+                            }
                         } label: {
-                            Label("Import CSV", systemImage: "square.and.arrow.down")
+                            Image(systemName: "ellipsis.circle")
                         }
+                    }
+                    NavigationLink {
+                        TransactionHistoryView()
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "clock.arrow.circlepath")
                     }
                 }
             }

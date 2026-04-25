@@ -205,6 +205,13 @@ final class PortfolioViewModel: ObservableObject {
         recordSnapshot()
     }
 
+    func deleteTransaction(_ transaction: Transaction) {
+        transactions.removeAll { $0.id == transaction.id }
+        persistence.saveTransactions(transactions)
+        portfoliosVM?.updateTransactions(transactions, for: portfolioId)
+        recordSnapshot()
+    }
+
     func refreshPrices() async {
         isLoading = true
         errorMessage = nil

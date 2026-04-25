@@ -11,6 +11,11 @@ final class NewsService {
         return URLSession(configuration: config)
     }()
 
+    func fetchMarketNews() async -> [NewsItem] {
+        // Fetch general market news using SPY as a proxy for broad market headlines
+        return await fetchNews(for: "SPY")
+    }
+
     func fetchNews(for symbol: String) async -> [NewsItem] {
         let encoded = symbol.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? symbol
         guard let url = URL(string: "https://query1.finance.yahoo.com/v1/finance/search?q=\(encoded)&newsCount=8&quotesCount=0&lang=en-US") else { return [] }
