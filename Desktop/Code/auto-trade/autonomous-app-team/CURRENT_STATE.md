@@ -1,15 +1,23 @@
 # Current State — Trading App
 
 > **Purpose:** Quick-start context for any new session. Read this first. Do NOT re-read all sprint history or agent logs.
-> **Last updated:** 2026-04-25 (Sprint 17 COMPLETE)
+> **Last updated:** 2026-04-25 (Sprint 18 COMPLETE)
 
 ---
 
 ## Where We Are
 
-- **Sprint:** 17 COMPLETE — starting Sprint 18 next session
-- **Tests:** 280 passing, 0 failing
-- **Branch:** minimal-clean
+- **Sprint:** 18 COMPLETE — starting Sprint 19 next session
+- **Tests:** 286 passing, 0 failing
+- **Branch:** minimal-clean (pushed)
+
+---
+
+## Sprint 18 Summary (DONE)
+
+| Story | Status | What Was Built |
+|-------|--------|---------------|
+| Quality dip in daily note | ✅ | Top 5 quality dip picks added to Obsidian daily note (above swing/breakout picks). Shows tier, drawdown%, dip score, RS, 200MA flag |
 
 ---
 
@@ -17,7 +25,7 @@
 
 | Story | Status | What Was Built |
 |-------|--------|---------------|
-| Quality Dip Screener | ✅ | New "Quality Dip" tab in screener. AI_CORE/AI_INFRA/GROWTH tier + 5–25% dip + RS ≥ 35. Surfaces NVDA@$175, ANET@$127 type setups |
+| Quality Dip Screener | ✅ | New "Quality Dip" tab in screener UI. AI_CORE/AI_INFRA/GROWTH + 5–25% dip + RS ≥ 35. GET /api/screener/quality-dip |
 
 ### Quality Dip Screener Design
 
@@ -25,12 +33,7 @@
 
 Tier ranks: AI_CORE=100, AI_INFRA=85, GROWTH=70
 
-**Filters:**
-- Tier ∈ {AI_CORE, AI_INFRA, GROWTH} — quality companies only
-- Drawdown 3m: −5% to −25% — meaningful dip, not crash
-- RS score ≥ 35 — still outperforming sector despite dip
-
-**Card shows:** tier badge (violet/blue/emerald), drawdown%, dip score bar, RS score bar, RSI14, 200MA flag, current price
+**Filters:** Tier ∈ {AI_CORE, AI_INFRA, GROWTH} · Drawdown 3m: −5% to −25% · RS ≥ 35
 
 ---
 
@@ -38,21 +41,10 @@ Tier ranks: AI_CORE=100, AI_INFRA=85, GROWTH=70
 
 | Story | Status | What Was Built |
 |-------|--------|---------------|
-| Innovation scorer fix | ✅ | Tier-based quality signal replaces broken momentum proxy |
-| S47 position sizing | ✅ | 1.5%–5% conviction-scaled sizing (was flat 3%) |
+| Innovation scorer fix | ✅ | Tier-based quality signal (AI_CORE=95 … AVOID=35). Momentum has zero effect |
+| S47 position sizing | ✅ | 1.5%–5% conviction-scaled (was flat 3%) |
 | Sector ETF safety | ✅ | AVOID tier no longer disables Ticker.enabled |
-| UI chip system | ✅ | Shared Chips.tsx with ScoreChip/RegimeBadge/StatusPill/SignalTag |
-| Config test isolation | ✅ | Portfolio tests patch write_scoring_config |
-
----
-
-## Sprint 15 Summary (DONE)
-
-| Story | Status |
-|-------|--------|
-| H13 day-of-week | ✅ Thursday in CAUTION near coin-flip (+0.12% avg) |
-| H15 infra | ✅ Breakout simulator entries tagged `auto-paper-trade-breakout` |
-| S46 BEAR floor | ✅ `bear_min_conviction` query param |
+| UI chip system | ✅ | Shared Chips.tsx across all pages |
 
 ---
 
@@ -84,12 +76,11 @@ Tier ranks: AI_CORE=100, AI_INFRA=85, GROWTH=70
 
 ---
 
-## Sprint 18 Candidates
+## Sprint 19 Candidates
 
 | Story | Priority | Description |
 |-------|----------|-------------|
 | H15 | P1 | Breakout vs swing comparison — ready ~2026-05-21 |
-| Daily note quality dip | P2 | Include top-3 quality dip picks in Obsidian daily note |
 | S42 | P2 | Weight re-optimisation — needs ≥30 FRED-scored forward trades |
 | H13b | P3 | Thursday/CAUTION validation on forward trades |
 
@@ -99,6 +90,7 @@ Tier ranks: AI_CORE=100, AI_INFRA=85, GROWTH=70
 
 | File | Purpose |
 |------|---------|
+| `scripts/daily_note.py` | Daily Obsidian note — macro + quality dips + swing + breakout + simulator |
 | `app/services/screener.py` | Pre-breakout + swing + quality_dip screener |
 | `app/api/screener.py` | GET /screener, /screener/prebreakout, /screener/quality-dip |
 | `app/scoring/components/innovation_light.py` | Tier-based innovation scorer |
@@ -106,9 +98,8 @@ Tier ranks: AI_CORE=100, AI_INFRA=85, GROWTH=70
 | `config/scoring.yaml` | Weights + regime_weights + position sizing (1.5–5%) |
 | `app/models/watchlist.py` | Watchlist DB (AI_CORE/AI_INFRA/GROWTH/QUALITY/AVOID) |
 | `scripts/update_watchlist.py` | Agent-curated watchlist (run every 3 sprints) |
-| `app/scoring/engine.py` | Universe filter via watchlist join |
-| `frontend/src/components/Chips.tsx` | Shared chip/badge/pill components |
 | `frontend/src/pages/Screener.tsx` | 3-tab screener: Swing/Breakout/Quality Dip |
+| `frontend/src/components/Chips.tsx` | Shared chip/badge/pill components |
 
 ---
 
