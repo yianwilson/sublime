@@ -1,15 +1,36 @@
 # Current State — Trading App
 
 > **Purpose:** Quick-start context for any new session. Read this first. Do NOT re-read all sprint history or agent logs.
-> **Last updated:** 2026-04-25 (Sprint 16 COMPLETE)
+> **Last updated:** 2026-04-25 (Sprint 17 COMPLETE)
 
 ---
 
 ## Where We Are
 
-- **Sprint:** 16 COMPLETE — starting Sprint 17 next session
-- **Tests:** 272 passing, 0 failing
+- **Sprint:** 17 COMPLETE — starting Sprint 18 next session
+- **Tests:** 280 passing, 0 failing
 - **Branch:** minimal-clean
+
+---
+
+## Sprint 17 Summary (DONE)
+
+| Story | Status | What Was Built |
+|-------|--------|---------------|
+| Quality Dip Screener | ✅ | New "Quality Dip" tab in screener. AI_CORE/AI_INFRA/GROWTH tier + 5–25% dip + RS ≥ 35. Surfaces NVDA@$175, ANET@$127 type setups |
+
+### Quality Dip Screener Design
+
+**Algorithm:** `dip_quality_score = dip_score×0.5 + rs_score×0.3 + tier_rank×0.2`
+
+Tier ranks: AI_CORE=100, AI_INFRA=85, GROWTH=70
+
+**Filters:**
+- Tier ∈ {AI_CORE, AI_INFRA, GROWTH} — quality companies only
+- Drawdown 3m: −5% to −25% — meaningful dip, not crash
+- RS score ≥ 35 — still outperforming sector despite dip
+
+**Card shows:** tier badge (violet/blue/emerald), drawdown%, dip score bar, RS score bar, RSI14, 200MA flag, current price
 
 ---
 
@@ -17,66 +38,21 @@
 
 | Story | Status | What Was Built |
 |-------|--------|---------------|
-| Innovation scorer fix | ✅ | Tier-based quality signal replaces broken momentum proxy. NVDA/ANET dipping = still high quality score |
-| S47 position sizing | ✅ | 1.5%–5% conviction-scaled sizing (was flat 3%). Low conviction → 1.5%, high → 5% |
-| Sector ETF safety | ✅ | AVOID tier no longer disables Ticker.enabled — sector ETFs keep price data flowing for RS calculations |
-| UI chip system | ✅ | Shared Chips.tsx with ScoreChip/RegimeBadge/StatusPill/SignalTag across all pages |
-| Config test isolation | ✅ | Portfolio tests now patch write_scoring_config so tests can't reset config/scoring.yaml |
-
----
-
-## Key Changes This Sprint
-
-### Innovation Scorer — Tier-Based Quality
-
-**Problem:** Dipping stocks (NVDA@$175, ANET@$127) got innovation score ~22 because the scorer used momentum_slope as quality proxy. Negative momentum → 0 for momentum components.
-
-**Fix:** Innovation score now uses watchlist tier exclusively:
-- AI_CORE (NVDA, MSFT, AMD…): 95
-- AI_INFRA (ANET, AVGO, QCOM…): 85
-- GROWTH (CRWD, PLTR, LLY…): 70
-- QUALITY (JPM, COST, V…): 55
-- AVOID / unknown: 35
-
-Fundamentals (revenue/EPS growth) contribute 50% when available; tier fills in otherwise.
-Momentum has **zero** effect on innovation score.
-
-### S47 — Conviction-Scaled Position Sizing
-
-`config/scoring.yaml`:
-```yaml
-position_sizing:
-  min_position_pct: 1.5
-  max_position_pct: 5.0
-```
-Conviction 50 → 3.25% ($3,250 on $100k). Conviction 90 → 4.5% ($4,500).
-
-### Sector ETF Safety
-
-`update_watchlist.py --apply` no longer sets `Ticker.enabled=False` for AVOID tickers.
-Scoring exclusion is handled entirely by the Watchlist join. Sector ETFs (XLK, XLF, etc.) stay enabled for price ingestion so RS calculations work correctly.
-
----
-
-## Sprint 14 Summary (DONE)
-
-| Story | Status | What Was Built |
-|-------|--------|---------------|
-| Breakout redesign | ✅ | Pre-breakout base screener — finds stocks coiling BEFORE the move, not after |
-| S43 | ✅ | Screener: BEAR regime filter hides conviction 50–69 by default (toggle to show) |
-| S44 | ✅ | Screener: position sizing guidance (Size: X% / $Y) in each card footer |
-| S45 | ✅ | Daily note: simulator results section + launchd plist for 22:00 auto-run |
-| H16 | ✅ | Regime-dependent swing weights — BULL trend-heavy, BEAR dip-heavy |
+| Innovation scorer fix | ✅ | Tier-based quality signal replaces broken momentum proxy |
+| S47 position sizing | ✅ | 1.5%–5% conviction-scaled sizing (was flat 3%) |
+| Sector ETF safety | ✅ | AVOID tier no longer disables Ticker.enabled |
+| UI chip system | ✅ | Shared Chips.tsx with ScoreChip/RegimeBadge/StatusPill/SignalTag |
+| Config test isolation | ✅ | Portfolio tests patch write_scoring_config |
 
 ---
 
 ## Sprint 15 Summary (DONE)
 
-| Story | Status | What Was Built |
-|-------|--------|---------------|
-| H13 | ✅ | Day-of-week entry analysis — Thursday in CAUTION is near coin-flip (+0.12% avg) |
-| H15 infra | ✅ | Simulator now enters top-3 breakout trades daily (tagged `auto-paper-trade-breakout`), enabling forward H15 test in ~30 days |
-| S46 | ✅ | Screener: `bear_min_conviction` query param filters results in BEAR regime |
+| Story | Status |
+|-------|--------|
+| H13 day-of-week | ✅ Thursday in CAUTION near coin-flip (+0.12% avg) |
+| H15 infra | ✅ Breakout simulator entries tagged `auto-paper-trade-breakout` |
+| S46 BEAR floor | ✅ `bear_min_conviction` query param |
 
 ---
 
@@ -92,31 +68,30 @@ Scoring exclusion is handled entirely by the Watchlist join. Sector ETFs (XLK, X
 
 ## Forward Trade Pipeline
 
-- Simulator running daily since Sprint 13. Enters top-5 swing, closes per regime hold limit.
-- Tags: `notes='auto-paper-trade YYYY-MM-DD'`
-- Daily note auto-runs at 22:00 (after simulator) — install plist to activate:
-  `cp scripts/com.trading.daily-note.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.trading.daily-note.plist`
-- Rerun H10/H11 analysis after 30 days (~150 forward trades).
-- Full Analyst Agent trigger: 500+ forward trades OR win rate shifts >5%.
+- Simulator entering top-5 swing + top-3 breakout daily since Sprint 13/15.
+- Swing tags: `auto-paper-trade YYYY-MM-DD`
+- Breakout tags: `auto-paper-trade-breakout YYYY-MM-DD`
+- H15 (breakout vs swing) testable ~2026-05-21 (30 days of forward breakout trades)
+- Full Analyst trigger: 500+ forward trades OR win rate shifts >5%
 
 ---
 
 ## Top Blockers
 
-1. **Forward trades need time** — ~3 months to meaningful forward data. No action needed.
-2. **AV key not configured** — news_score uses FRED fallback. No UI warning (removed).
-3. **Accuracy page slow** — `/api/accuracy/report` ~10s. Removed from nav. Revisit 2026-07.
+1. **Forward trades need time** — ~3 months to meaningful forward data.
+2. **AV key not configured** — news_score uses FRED fallback.
+3. **Accuracy page slow** — ~10s, removed from nav. Revisit 2026-07.
 
 ---
 
-## Sprint 17 Candidates
+## Sprint 18 Candidates
 
 | Story | Priority | Description |
 |-------|----------|-------------|
-| H15 | P1 | Does breakout mode outperform swing in BULL? (needs ~30 days of forward breakout trades, ~2026-05-21) |
-| S42 | P2 | Weight re-optimisation — after ≥30 FRED-scored forward trades |
-| H13b | P3 | Validate Thursday/CAUTION finding on forward trades; optionally add simulator day preference |
-| Quality dip screener | P2 | Dedicated screener mode: tier + dip_score + RS for NVDA@$175 type setups |
+| H15 | P1 | Breakout vs swing comparison — ready ~2026-05-21 |
+| Daily note quality dip | P2 | Include top-3 quality dip picks in Obsidian daily note |
+| S42 | P2 | Weight re-optimisation — needs ≥30 FRED-scored forward trades |
+| H13b | P3 | Thursday/CAUTION validation on forward trades |
 
 ---
 
@@ -124,16 +99,16 @@ Scoring exclusion is handled entirely by the Watchlist join. Sector ETFs (XLK, X
 
 | File | Purpose |
 |------|---------|
-| `app/scoring/components/innovation_light.py` | Tier-based innovation scorer (H16-aligned) |
-| `app/services/screener.py` | Pre-breakout base screener; BEAR conviction floor (S46) |
+| `app/services/screener.py` | Pre-breakout + swing + quality_dip screener |
+| `app/api/screener.py` | GET /screener, /screener/prebreakout, /screener/quality-dip |
+| `app/scoring/components/innovation_light.py` | Tier-based innovation scorer |
 | `app/scoring/modes/swing.py` | Swing scorer — regime-dependent weights (H16) |
 | `config/scoring.yaml` | Weights + regime_weights + position sizing (1.5–5%) |
-| `app/services/paper_trade_simulator.py` | Simulator — swing + breakout daily entries (H15 infra) |
+| `app/models/watchlist.py` | Watchlist DB (AI_CORE/AI_INFRA/GROWTH/QUALITY/AVOID) |
 | `scripts/update_watchlist.py` | Agent-curated watchlist (run every 3 sprints) |
-| `app/models/watchlist.py` | Watchlist DB model (tier: AI_CORE/AI_INFRA/GROWTH/QUALITY/AVOID) |
 | `app/scoring/engine.py` | Universe filter via watchlist join |
 | `frontend/src/components/Chips.tsx` | Shared chip/badge/pill components |
-| `scripts/daily_note.py` | Daily Obsidian note (macro + picks + simulator results) |
+| `frontend/src/pages/Screener.tsx` | 3-tab screener: Swing/Breakout/Quality Dip |
 
 ---
 
@@ -149,14 +124,8 @@ docker compose -f /Users/edwardwilson/Desktop/Code/Trading/docker-compose.yml bu
 # Rebuild frontend
 docker compose -f /Users/edwardwilson/Desktop/Code/Trading/docker-compose.yml build frontend && docker compose -f /Users/edwardwilson/Desktop/Code/Trading/docker-compose.yml up -d frontend
 
-# Manually trigger simulator
-docker compose -f /Users/edwardwilson/Desktop/Code/Trading/docker-compose.yml run --rm backend python -c "
-from app.core.db import SessionLocal
-from app.services.paper_trade_simulator import run_simulator
-db = SessionLocal()
-print(run_simulator(db))
-db.close()
-"
+# Quality dip API test
+curl -s http://localhost:8000/api/screener/quality-dip | python3 -m json.tool | head -30
 ```
 
 ---
@@ -166,4 +135,4 @@ db.close()
 - Do NOT run the Analyst Agent until 500+ forward trades OR win rate shifts >5%
 - Do NOT run Playwright E2E — not a sprint gate; manual only
 - Do NOT run weight optimiser until ≥30 FRED-scored trades accumulated
-- Do NOT spawn sub-agents for implementation — permission isolation breaks the workflow; implement directly in main conversation
+- Do NOT spawn sub-agents for implementation — implement directly in main conversation
