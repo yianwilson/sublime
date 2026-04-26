@@ -111,4 +111,12 @@ final class PersistenceService {
         guard let data = try? JSONEncoder().encode(alerts) else { return }
         try? data.write(to: alertsFileURL, options: .atomic)
     }
+
+    // MARK: - Clear All Data
+
+    func clearAllData() {
+        try? FileManager.default.removeItem(at: portfolioFileURL)
+        try? FileManager.default.removeItem(at: portfoliosFileURL)
+        try? FileManager.default.removeItem(at: snapshotsFileURL)
+    }
 }

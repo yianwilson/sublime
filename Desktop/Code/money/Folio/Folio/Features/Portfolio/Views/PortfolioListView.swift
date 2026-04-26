@@ -147,6 +147,12 @@ private struct HoldingRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                if vm.totalPortfolioValue > 0 {
+                    let weight = vm.currentValue(for: holding) / vm.totalPortfolioValue * 100
+                    Text(String(format: "%.1f%% of portfolio", weight))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
@@ -168,6 +174,15 @@ private struct HoldingRowView: View {
                     trailingValue: vm.pnlPercent(for: holding).asPercent(),
                     trailingColor: vm.pnlPercent(for: holding) >= 0 ? .green : .red
                 )
+
+                if holding.totalDividends > 0 {
+                    HStack {
+                        Spacer()
+                        Text("Div: +\(holding.totalDividends.asCurrency(code: vm.baseCurrencyCode))")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .padding(.vertical, 4)

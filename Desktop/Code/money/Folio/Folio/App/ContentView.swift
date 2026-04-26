@@ -36,6 +36,9 @@ struct ContentView: View {
 
             AnalyticsView()
                 .tabItem { Label("Analytics", systemImage: "chart.bar.xaxis") }
+
+            NavigationStack { SettingsView() }
+                .tabItem { Label("Settings", systemImage: "gear") }
         }
         .environmentObject(portfolioVM)
         .sheet(isPresented: $showPortfolios) {

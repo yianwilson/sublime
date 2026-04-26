@@ -1,8 +1,9 @@
 import Foundation
 
 enum TransactionType: String, Codable, CaseIterable, Identifiable {
-    case buy  = "BUY"
-    case sell = "SELL"
+    case buy      = "BUY"
+    case sell     = "SELL"
+    case dividend = "DIVIDEND"
 
     var id: String { rawValue }
     var displayName: String { rawValue.capitalized }

@@ -10,6 +10,7 @@ struct DashboardView: View {
     @EnvironmentObject private var vm: PortfolioViewModel
     @AppStorage("dashboard.performanceRange") private var selectedRangeRawValue = PerformanceRange.oneMonth.rawValue
     @State private var chartMode: ChartMode = .dollar
+    @State private var showBenchmark = false
     @State private var marketNews: [NewsItem] = []
     @State private var isLoadingNews = false
     private let newsService = NewsService()
@@ -236,6 +237,19 @@ struct DashboardView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 70)
+
+                if chartMode == .percent {
+                    Button {
+                        showBenchmark.toggle()
+                    } label: {
+                        Text("S&P")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6).padding(.vertical, 4)
+                            .background(showBenchmark ? Color.gray.opacity(0.3) : Color.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .foregroundStyle(showBenchmark ? .primary : .secondary)
+                    }
+                }
             }
 
             if filteredSeries.count < 2 {
@@ -247,20 +261,38 @@ struct DashboardView: View {
                     .padding(.vertical, 8)
             } else {
                 let chartData = percentData(from: filteredSeries)
-                Chart(chartData, id: \.date) { point in
-                    LineMark(
-                        x: .value("Date", point.date),
-                        y: .value(chartMode == .dollar ? "Value" : "Return %", point.value)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(chartColor(from: chartData))
+                Chart {
+                    ForEach(chartData, id: \.date) { point in
+                        LineMark(
+                            x: .value("Date", point.date),
+                            y: .value(chartMode == .dollar ? "Value" : "Return %", point.value)
+                        )
+                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(chartColor(from: chartData))
 
-                    AreaMark(
-                        x: .value("Date", point.date),
-                        y: .value(chartMode == .dollar ? "Value" : "Return %", point.value)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(chartColor(from: chartData).opacity(0.12))
+                        AreaMark(
+                            x: .value("Date", point.date),
+                            y: .value(chartMode == .dollar ? "Value" : "Return %", point.value)
+                        )
+                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(chartColor(from: chartData).opacity(0.12))
+                    }
+
+                    if chartMode == .percent && showBenchmark {
+                        let benchmarkData = benchmarkPercentData(from: vm.filteredPerformanceSeries(
+                            range: selectedRange,
+                            series: vm.benchmarkSeries
+                        ))
+                        ForEach(benchmarkData, id: \.date) { point in
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("SPY", point.value)
+                            )
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(Color.gray.opacity(0.7))
+                            .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        }
+                    }
                 }
                 .frame(height: 180)
                 .chartYAxis {
@@ -287,6 +319,11 @@ struct DashboardView: View {
         guard chartMode == .percent, let first = series.first, first.totalValue > 0 else {
             return series.map { ChartPoint(date: $0.date, value: $0.totalValue) }
         }
+        return series.map { ChartPoint(date: $0.date, value: ($0.totalValue - first.totalValue) / first.totalValue * 100) }
+    }
+
+    private func benchmarkPercentData(from series: [PerformanceSnapshot]) -> [ChartPoint] {
+        guard let first = series.first, first.totalValue > 0 else { return [] }
         return series.map { ChartPoint(date: $0.date, value: ($0.totalValue - first.totalValue) / first.totalValue * 100) }
     }
 

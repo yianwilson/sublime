@@ -11,6 +11,7 @@ struct Holding: Identifiable, Equatable {
     let averageCostBasis: Double     // weighted avg price of open lots (USD/unit)
     let totalCostBasis: Double       // total cost of open lots (USD)
     let realisedPnL: Double          // USD, from closed lots
+    let totalDividends: Double       // USD, sum of all dividend income for this holding
     let transactions: [Transaction]  // all transactions for this symbol+type
 
     var id: String { symbol + assetType.rawValue }

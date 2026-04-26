@@ -124,6 +124,7 @@ struct AddAssetView: View {
                     Label(type.rawValue, systemImage: type.icon).tag(type)
                 }
             }
+            .disabled(vm.transactionType == .dividend)
         }
     }
 

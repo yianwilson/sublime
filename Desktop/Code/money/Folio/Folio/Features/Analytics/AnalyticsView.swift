@@ -5,10 +5,18 @@ struct AnalyticsView: View {
 
     private var analytics: TradeAnalytics { vm.tradeAnalytics }
 
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    lifetimeStatsCard
                     overallStatsCard
                     symbolBreakdownCard
                 }
@@ -30,6 +38,93 @@ struct AnalyticsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Lifetime Stats Card
+
+    private var lifetimeStatsCard: some View {
+        let startedText = vm.portfolioStartDate.map { Self.dateFormatter.string(from: $0) } ?? "—"
+        let cagrText = vm.cagr.map { String(format: "%.1f%%", $0) } ?? "—"
+        let cagrColor: Color = (vm.cagr ?? 0) >= 0 ? .green : .red
+        let totalReturn = vm.totalCostBasis > 0
+            ? (vm.totalPortfolioValue - vm.totalCostBasis) / vm.totalCostBasis * 100
+            : 0.0
+        let totalReturnText = vm.totalCostBasis > 0 ? String(format: "%.1f%%", totalReturn) : "—"
+        let totalReturnColor: Color = totalReturn >= 0 ? .green : .red
+        let hasData = vm.portfolioStartDate != nil
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.regularMaterial)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Portfolio Lifetime")
+                    .font(.headline)
+                    .padding(.horizontal, 4)
+
+                if !hasData {
+                    Text("No transaction data yet.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 8)
+                } else {
+                    VStack(spacing: 10) {
+                        lifetimeStatRow(label: "Started", value: startedText, color: .primary)
+                        lifetimeStatRow(label: "CAGR", value: cagrText, color: cagrColor)
+                        lifetimeStatRow(label: "Total Return", value: totalReturnText, color: totalReturnColor)
+
+                        Divider()
+
+                        if let best = vm.bestDay {
+                            HStack {
+                                Text("Best Day")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(Self.dateFormatter.string(from: best.date))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text(String(format: "+%.2f%%", best.percent))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.green)
+                            }
+                            .padding(.horizontal, 4)
+                        }
+
+                        if let worst = vm.worstDay {
+                            HStack {
+                                Text("Worst Day")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(Self.dateFormatter.string(from: worst.date))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text(String(format: "%.2f%%", worst.percent))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.red)
+                            }
+                            .padding(.horizontal, 4)
+                        }
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+
+    private func lifetimeStatRow(label: String, value: String, color: Color) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Overall Stats Card

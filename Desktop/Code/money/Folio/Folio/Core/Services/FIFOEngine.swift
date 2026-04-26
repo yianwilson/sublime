@@ -12,6 +12,7 @@ enum FIFOEngine {
 
             var openLots: [(quantity: Double, price: Double)] = []
             var realisedPnL: Double = 0
+            var totalDividends: Double = 0
 
             for tx in sorted {
                 switch tx.type {
@@ -30,6 +31,10 @@ enum FIFOEngine {
                         remaining -= matched
                         if openLots[0].quantity < 1e-10 { openLots.removeFirst() }
                     }
+
+                case .dividend:
+                    // Dividends contribute income but do not affect lots or cost basis
+                    totalDividends += tx.price * tx.quantity
                 }
             }
 
@@ -48,6 +53,7 @@ enum FIFOEngine {
                 averageCostBasis: averageCostBasis,
                 totalCostBasis:   totalCostBasis,
                 realisedPnL:      realisedPnL,
+                totalDividends:   totalDividends,
                 transactions:     sorted
             )
         }
@@ -71,6 +77,8 @@ enum FIFOEngine {
                     remaining -= matched
                     if lots[0].quantity < 1e-10 { lots.removeFirst() }
                 }
+            case .dividend:
+                break // dividends do not affect open lots
             }
         }
 
@@ -117,6 +125,8 @@ enum FIFOEngine {
                     remaining -= matched
                     if lots[0].quantity < 1e-10 { lots.removeFirst() }
                 }
+            case .dividend:
+                break // dividends do not affect closed trade matching
             }
         }
 

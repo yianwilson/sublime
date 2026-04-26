@@ -50,6 +50,8 @@ enum TimeSeriesEngine {
                         openLots[tx.symbol] = lots[0].quantity < 1e-10 ? Array(lots.dropFirst()) : lots
                     }
                     if openLots[tx.symbol]?.isEmpty == true { openLots.removeValue(forKey: tx.symbol) }
+                case .dividend:
+                    break // dividends do not affect open lot positions
                 }
                 txIndex += 1
             }

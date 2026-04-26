@@ -24,6 +24,7 @@ final class PortfolioViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var upcomingEvents: [UpcomingEvent] = []
     @Published private(set) var reconstructedSeries: [PerformanceSnapshot] = []
+    @Published private(set) var benchmarkSeries: [PerformanceSnapshot] = []
     @Published private(set) var isReconstructing = false
     @Published private(set) var alerts: [PriceAlert] = []
 
@@ -83,6 +84,55 @@ final class PortfolioViewModel: ObservableObject {
 
     var holdings: [Holding] {
         FIFOEngine.computeHoldings(from: transactions)
+    }
+
+    // MARK: - Lifetime Stats
+
+    /// Date of first transaction
+    var portfolioStartDate: Date? {
+        transactions.min(by: { $0.date < $1.date })?.date
+    }
+
+    /// CAGR using reconstructedSeries (first and last value)
+    var cagr: Double? {
+        guard
+            let first = reconstructedSeries.first,
+            let last = reconstructedSeries.last,
+            first.totalValue > 0,
+            last.date > first.date
+        else { return nil }
+
+        let years = last.date.timeIntervalSince(first.date) / (365.25 * 24 * 3600)
+        guard years >= 0.1 else { return nil }  // need at least ~5 weeks
+        return (pow(last.totalValue / first.totalValue, 1.0 / years) - 1) * 100
+    }
+
+    /// Best single day: max(daily % change across snapshots)
+    var bestDay: (date: Date, percent: Double)? {
+        let series = reconstructedSeries
+        guard series.count >= 2 else { return nil }
+        var best: (Date, Double)? = nil
+        for i in 1..<series.count {
+            let prev = series[i-1].totalValue
+            guard prev > 0 else { continue }
+            let change = (series[i].totalValue - prev) / prev * 100
+            if best == nil || change > best!.1 { best = (series[i].date, change) }
+        }
+        return best
+    }
+
+    /// Worst single day
+    var worstDay: (date: Date, percent: Double)? {
+        let series = reconstructedSeries
+        guard series.count >= 2 else { return nil }
+        var worst: (Date, Double)? = nil
+        for i in 1..<series.count {
+            let prev = series[i-1].totalValue
+            guard prev > 0 else { continue }
+            let change = (series[i].totalValue - prev) / prev * 100
+            if worst == nil || change < worst!.1 { worst = (series[i].date, change) }
+        }
+        return worst
     }
 
     // MARK: - Trade Analytics
@@ -268,6 +318,16 @@ final class PortfolioViewModel: ObservableObject {
         reconstructedSeries = seriesUSD.map {
             PerformanceSnapshot(date: $0.date, totalValue: $0.totalValue * audPerUSD)
         }
+
+        // Fetch SPY benchmark for same date range
+        let spyLookup = [PriceLookup(symbol: "SPY", assetType: .etf, coinGeckoId: "")]
+        let spyHistory = await historicalPriceService.fetchPriceHistory(for: spyLookup, from: startDate)
+        if let spyPrices = spyHistory["SPY"] {
+            benchmarkSeries = spyPrices
+                .sorted { $0.key < $1.key }
+                .map { PerformanceSnapshot(date: $0.key, totalValue: $0.value) }
+        }
+
         isReconstructing = false
     }
 
