@@ -6,6 +6,7 @@ struct ManagePortfoliosView: View {
     @State private var newName = ""
     @State private var renaming: NamedPortfolio? = nil
     @State private var renameText = ""
+    @State private var showComparison = false
 
     var body: some View {
         NavigationStack {
@@ -64,9 +65,16 @@ struct ManagePortfoliosView: View {
             .navigationTitle("Portfolios")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Compare") { showComparison = true }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showComparison) {
+                PortfolioComparisonView(portfolios: portfoliosVM.portfolios)
+                    .environmentObject(portfoliosVM)
             }
             .alert("Rename Portfolio", isPresented: Binding(
                 get: { renaming != nil },

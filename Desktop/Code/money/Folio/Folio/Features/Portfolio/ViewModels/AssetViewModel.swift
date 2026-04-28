@@ -15,6 +15,7 @@ final class AssetViewModel: ObservableObject {
     @Published var date: Date = Date()
     @Published var coinGeckoId: String = ""
     @Published var notes: String = ""
+    @Published var tag: String = ""
 
     // MARK: - Search State
 
@@ -85,12 +86,13 @@ final class AssetViewModel: ObservableObject {
             price:       px,
             fee:         Double(fee) ?? 0,
             date:        date,
-            notes:       notes.isEmpty ? nil : notes
+            notes:       notes.isEmpty ? nil : notes,
+            tag:         tag.isEmpty ? nil : tag
         )
     }
 
     func reset() {
-        symbol = ""; name = ""; quantity = ""; price = ""; fee = ""; notes = ""
+        symbol = ""; name = ""; quantity = ""; price = ""; fee = ""; notes = ""; tag = ""
         assetType = .stock; transactionType = .buy; coinGeckoId = ""; searchResults = []
         date = Date()
     }

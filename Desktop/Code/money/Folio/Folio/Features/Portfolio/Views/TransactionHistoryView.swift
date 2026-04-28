@@ -65,8 +65,18 @@ struct TransactionHistoryView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(tx.symbol)
-                    .font(.subheadline.weight(.semibold))
+                HStack(spacing: 6) {
+                    Text(tx.symbol)
+                        .font(.subheadline.weight(.semibold))
+                    if let tag = tx.tag, !tag.isEmpty {
+                        Text(tag)
+                            .font(.caption2)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.2))
+                            .foregroundStyle(Color.purple)
+                            .clipShape(Capsule())
+                    }
+                }
                 Text(tx.date, style: .date)
                     .font(.caption)
                     .foregroundStyle(.secondary)

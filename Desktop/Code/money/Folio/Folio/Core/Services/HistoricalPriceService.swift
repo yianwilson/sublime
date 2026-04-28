@@ -1,5 +1,16 @@
 import Foundation
 
+// MARK: - OHLC Model
+
+struct OHLCBar: Identifiable {
+    let id: Date  // start of day
+    let open: Double
+    let high: Double
+    let low: Double
+    let close: Double
+    var isGain: Bool { close >= open }
+}
+
 /// Fetches daily close-price history per symbol.
 /// Returns [symbol: [startOfDay → closePrice (USD)]]
 final class HistoricalPriceService {
@@ -69,6 +80,39 @@ final class HistoricalPriceService {
         }
     }
 
+    // MARK: - OHLC (Yahoo Finance)
+
+    func fetchOHLCHistory(symbol: String, from startDate: Date) async -> [OHLCBar] {
+        let encoded = symbol.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? symbol
+        let period1 = Int(startDate.timeIntervalSince1970)
+        let period2 = Int(Date().timeIntervalSince1970)
+        guard let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encoded)?period1=\(period1)&period2=\(period2)&interval=1d") else { return [] }
+
+        do {
+            let (data, _) = try await session.data(from: url)
+            let response = try JSONDecoder().decode(YHOHLCChartResponse.self, from: data)
+            guard let result = response.chart.result?.first,
+                  let timestamps = result.timestamp,
+                  let quote = result.indicators.quote.first,
+                  let opens = quote.open,
+                  let highs = quote.high,
+                  let lows = quote.low,
+                  let closes = quote.close
+            else { return [] }
+
+            var bars: [OHLCBar] = []
+            let count = min(timestamps.count, opens.count, highs.count, lows.count, closes.count)
+            for i in 0..<count {
+                guard let o = opens[i], let h = highs[i], let l = lows[i], let c = closes[i] else { continue }
+                let day = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: TimeInterval(timestamps[i])))
+                bars.append(OHLCBar(id: day, open: o, high: h, low: l, close: c))
+            }
+            return bars.sorted { $0.id < $1.id }
+        } catch {
+            return []
+        }
+    }
+
     // MARK: - CoinGecko
 
     private func fetchCoinGeckoHistory(geckoId: String, from startDate: Date) async -> [Date: Double] {
@@ -103,3 +147,19 @@ private struct YHResult: Decodable {
 private struct YHIndicators: Decodable { let quote: [YHQuote] }
 private struct YHQuote: Decodable { let close: [Double?] }
 private struct CGMarketChart: Decodable { let prices: [[Double]] }
+
+// MARK: - OHLC Response Models
+
+private struct YHOHLCChartResponse: Decodable { let chart: YHOHLCChart }
+private struct YHOHLCChart: Decodable { let result: [YHOHLCResult]? }
+private struct YHOHLCResult: Decodable {
+    let timestamp: [Int]?
+    let indicators: YHOHLCIndicators
+}
+private struct YHOHLCIndicators: Decodable { let quote: [YHOHLCQuote] }
+private struct YHOHLCQuote: Decodable {
+    let open: [Double?]?
+    let high: [Double?]?
+    let low: [Double?]?
+    let close: [Double?]?
+}

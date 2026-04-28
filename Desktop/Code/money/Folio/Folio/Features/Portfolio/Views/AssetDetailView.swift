@@ -8,6 +8,11 @@ private enum DetailTab: String, CaseIterable {
     case news     = "News"
 }
 
+private enum AssetChartMode: String, CaseIterable {
+    case line   = "Line"
+    case candle = "Candle"
+}
+
 struct AssetDetailView: View {
     let holding: Holding
     @EnvironmentObject private var vm: PortfolioViewModel
@@ -21,6 +26,9 @@ struct AssetDetailView: View {
     @State private var priceHistory: [(date: Date, price: Double)] = []
     @State private var priceRange: PerformanceRange = .threeMonths
     @State private var isLoadingHistory = false
+    @State private var chartMode: AssetChartMode = .line
+    @State private var ohlcHistory: [OHLCBar] = []
+    @State private var isLoadingOHLC = false
     private let historicalPriceService = HistoricalPriceService()
 
     private var price: Double { vm.livePrice(for: holding) }
@@ -67,7 +75,13 @@ struct AssetDetailView: View {
             await loadPriceHistory()
         }
         .onChange(of: priceRange) {
+            ohlcHistory = []
             Task { await loadPriceHistory() }
+        }
+        .onChange(of: chartMode) {
+            if chartMode == .candle && ohlcHistory.isEmpty {
+                Task { await loadOHLCHistory() }
+            }
         }
         .navigationTitle(holding.symbol)
         .navigationBarTitleDisplayMode(.large)
@@ -199,6 +213,28 @@ struct AssetDetailView: View {
         isLoadingHistory = false
     }
 
+    private func loadOHLCHistory() async {
+        guard holding.assetType == .stock || holding.assetType == .etf else { return }
+        isLoadingOHLC = true
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let startDate: Date
+        switch priceRange {
+        case .oneWeek:
+            startDate = calendar.date(byAdding: .day, value: -6, to: today) ?? today
+        case .oneMonth:
+            startDate = calendar.date(byAdding: .month, value: -1, to: today) ?? today
+        case .threeMonths:
+            startDate = calendar.date(byAdding: .month, value: -3, to: today) ?? today
+        case .oneYear:
+            startDate = calendar.date(byAdding: .year, value: -1, to: today) ?? today
+        case .all:
+            startDate = calendar.date(byAdding: .year, value: -10, to: today) ?? today
+        }
+        ohlcHistory = await historicalPriceService.fetchOHLCHistory(symbol: holding.symbol, from: startDate)
+        isLoadingOHLC = false
+    }
+
     @ViewBuilder
     private var priceHistoryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -215,27 +251,69 @@ struct AssetDetailView: View {
                 .frame(maxWidth: 220)
             }
 
-            if isLoadingHistory {
-                ProgressView().frame(height: 160)
-            } else if priceHistory.isEmpty {
-                Text("No price data")
-                    .foregroundStyle(.secondary)
-                    .frame(height: 160)
-            } else {
-                Chart(priceHistory, id: \.date) { point in
-                    LineMark(
-                        x: .value("Date", point.date),
-                        y: .value("Price", point.price)
-                    )
-                    .foregroundStyle(Color.accentColor)
-                    AreaMark(
-                        x: .value("Date", point.date),
-                        y: .value("Price", point.price)
-                    )
-                    .foregroundStyle(Color.accentColor.opacity(0.15))
+            // Chart mode toggle — only for stocks/ETFs
+            if holding.assetType == .stock || holding.assetType == .etf {
+                Picker("Chart Mode", selection: $chartMode) {
+                    ForEach(AssetChartMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
                 }
-                .frame(height: 160)
-                .chartXAxis(.hidden)
+                .pickerStyle(.segmented)
+            }
+
+            if chartMode == .line {
+                if isLoadingHistory {
+                    ProgressView().frame(height: 160)
+                } else if priceHistory.isEmpty {
+                    Text("No price data")
+                        .foregroundStyle(.secondary)
+                        .frame(height: 160)
+                } else {
+                    Chart(priceHistory, id: \.date) { point in
+                        LineMark(
+                            x: .value("Date", point.date),
+                            y: .value("Price", point.price)
+                        )
+                        .foregroundStyle(Color.accentColor)
+                        AreaMark(
+                            x: .value("Date", point.date),
+                            y: .value("Price", point.price)
+                        )
+                        .foregroundStyle(Color.accentColor.opacity(0.15))
+                    }
+                    .frame(height: 160)
+                    .chartXAxis(.hidden)
+                }
+            } else {
+                if isLoadingOHLC {
+                    ProgressView().frame(height: 180)
+                } else if ohlcHistory.isEmpty {
+                    Text("No OHLC data")
+                        .foregroundStyle(.secondary)
+                        .frame(height: 180)
+                } else {
+                    Chart(ohlcHistory) { bar in
+                        // Wick (high-low range)
+                        RectangleMark(
+                            x: .value("Date", bar.id),
+                            yStart: .value("Low", bar.low),
+                            yEnd: .value("High", bar.high),
+                            width: 2
+                        )
+                        .foregroundStyle(bar.isGain ? Color.green : Color.red)
+
+                        // Body (open-close range)
+                        RectangleMark(
+                            x: .value("Date", bar.id),
+                            yStart: .value("Open", bar.open),
+                            yEnd: .value("Close", bar.close),
+                            width: 8
+                        )
+                        .foregroundStyle(bar.isGain ? Color.green : Color.red)
+                    }
+                    .frame(height: 180)
+                    .chartXAxis(.hidden)
+                }
             }
         }
         .padding()

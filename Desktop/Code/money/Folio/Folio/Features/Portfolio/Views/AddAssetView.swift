@@ -7,6 +7,8 @@ struct AddAssetView: View {
 
     @State private var searchQuery = ""
 
+    private let presetTags = ["DCA", "Earnings Play", "Swing Trade", "Stop Loss", "Long Term", "Rebalance"]
+
     var body: some View {
         NavigationStack {
             Form {
@@ -14,6 +16,7 @@ struct AddAssetView: View {
                 detailsSection
                 transactionSection
                 notesSection
+                tagSection
             }
             .navigationTitle("Add Transaction")
             .navigationBarTitleDisplayMode(.inline)
@@ -181,6 +184,27 @@ struct AddAssetView: View {
         Section("Notes (optional)") {
             TextField("e.g. earnings play, stop loss hit", text: $vm.notes, axis: .vertical)
                 .lineLimit(2...4)
+        }
+    }
+
+    // MARK: - Tag Section
+
+    private var tagSection: some View {
+        Section("Tag (optional)") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack {
+                    ForEach(presetTags, id: \.self) { preset in
+                        Button(preset) {
+                            vm.tag = vm.tag == preset ? "" : preset
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(vm.tag == preset ? .accentColor : .secondary)
+                        .font(.caption)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 0))
         }
     }
 

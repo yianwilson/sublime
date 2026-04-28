@@ -9,6 +9,7 @@ private enum WatchlistSortOrder: String, CaseIterable {
 struct WatchlistView: View {
     @EnvironmentObject private var vm: WatchlistViewModel
     @State private var showAddItem = false
+    @State private var showDCA = false
     @State private var sortOrder: WatchlistSortOrder = .name
 
     private var sortedItems: [WatchlistItem] {
@@ -43,6 +44,9 @@ struct WatchlistView: View {
                     }
                 }
             }
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("DCA") { showDCA = true }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 16) {
                     Menu {
@@ -68,6 +72,9 @@ struct WatchlistView: View {
         .sheet(isPresented: $showAddItem) {
             AddWatchlistItemView()
                 .environmentObject(vm)
+        }
+        .sheet(isPresented: $showDCA) {
+            DCASimulatorView()
         }
         .overlay {
             if vm.items.isEmpty {

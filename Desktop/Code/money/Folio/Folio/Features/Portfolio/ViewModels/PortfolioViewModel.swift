@@ -176,7 +176,7 @@ final class PortfolioViewModel: ObservableObject {
     var totalDailyChangePercent: Double {
         let previousValue = holdings.reduce(0.0) { sum, holding in
             guard let prev = quotes[holding.symbol]?.previousClose else { return sum + currentValue(for: holding) }
-            return sum + audValue(prev * holding.quantity)
+            return sum + audValue(prev * holding.quantity, symbol: holding.symbol)
         }
         guard previousValue > 0 else { return 0 }
         return (totalDailyChange / previousValue) * 100
@@ -216,7 +216,7 @@ final class PortfolioViewModel: ObservableObject {
         guard !trades.isEmpty else { return [] }
         var cumulative = 0.0
         return trades.map { trade in
-            cumulative += trade.pnl * audPerUSD
+            cumulative += audValue(trade.pnl, symbol: trade.symbol)
             return PerformanceSnapshot(date: trade.exitDate, totalValue: cumulative)
         }
     }
@@ -398,15 +398,15 @@ final class PortfolioViewModel: ObservableObject {
     func dailyChangeValue(for holding: Holding) -> Double {
         guard let previousClose = quotes[holding.symbol]?.previousClose else { return 0 }
         let currentPrice = livePrice(for: holding)
-        return audValue((currentPrice - previousClose) * holding.quantity)
+        return audValue((currentPrice - previousClose) * holding.quantity, symbol: holding.symbol)
     }
 
     func currentValue(for holding: Holding) -> Double {
-        audValue(holding.currentValue(price: livePrice(for: holding)))
+        audValue(holding.currentValue(price: livePrice(for: holding)), symbol: holding.symbol)
     }
 
     func costBasis(for holding: Holding) -> Double {
-        audValue(holding.totalCostBasis)
+        audValue(holding.totalCostBasis, symbol: holding.symbol)
     }
 
     func pnl(for holding: Holding) -> Double {
@@ -435,8 +435,12 @@ final class PortfolioViewModel: ObservableObject {
         }
     }
 
-    private func audValue(_ usdValue: Double) -> Double {
-        usdValue * audPerUSD
+    private func audValue(_ value: Double, symbol: String) -> Double {
+        // ASX stocks (.AX suffix) trade in AUD — no conversion needed
+        if symbol.hasSuffix(".AX") { return value }
+        // Use the quote's decoded currency if available
+        if let currency = quotes[symbol]?.currencyCode, currency == "AUD" { return value }
+        return value * audPerUSD
     }
 
     private func appendError(_ message: String) {
