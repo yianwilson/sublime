@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 private enum DetailTab: String, CaseIterable {
     case overview = "Overview"
@@ -15,6 +16,12 @@ struct AssetDetailView: View {
     @State private var newsItems: [NewsItem] = []
     @State private var isLoadingNews = false
     private let newsService = NewsService()
+
+    // Price history chart state
+    @State private var priceHistory: [(date: Date, price: Double)] = []
+    @State private var priceRange: PerformanceRange = .threeMonths
+    @State private var isLoadingHistory = false
+    private let historicalPriceService = HistoricalPriceService()
 
     private var price: Double { vm.livePrice(for: holding) }
 
@@ -57,6 +64,10 @@ struct AssetDetailView: View {
             isLoadingNews = true
             newsItems = await newsService.fetchNews(for: holding.symbol)
             isLoadingNews = false
+            await loadPriceHistory()
+        }
+        .onChange(of: priceRange) {
+            Task { await loadPriceHistory() }
         }
         .navigationTitle(holding.symbol)
         .navigationBarTitleDisplayMode(.large)
@@ -78,6 +89,12 @@ struct AssetDetailView: View {
 
     @ViewBuilder
     private var overviewSections: some View {
+        Section {
+            priceHistoryCard
+                .listRowInsets(.init(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowBackground(Color.clear)
+        }
+
         Section("Live Price") {
             row("Current Price", price.asCurrency())
             row(
@@ -148,6 +165,83 @@ struct AssetDetailView: View {
             row("Type", holding.assetType.rawValue)
             row("Base Currency", vm.baseCurrencyCode)
         }
+    }
+
+    // MARK: - Price History
+
+    private func loadPriceHistory() async {
+        isLoadingHistory = true
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let startDate: Date
+        switch priceRange {
+        case .oneWeek:
+            startDate = calendar.date(byAdding: .day, value: -6, to: today) ?? today
+        case .oneMonth:
+            startDate = calendar.date(byAdding: .month, value: -1, to: today) ?? today
+        case .threeMonths:
+            startDate = calendar.date(byAdding: .month, value: -3, to: today) ?? today
+        case .oneYear:
+            startDate = calendar.date(byAdding: .year, value: -1, to: today) ?? today
+        case .all:
+            startDate = calendar.date(byAdding: .year, value: -10, to: today) ?? today
+        }
+
+        let lookup = PriceLookup(
+            symbol: holding.symbol,
+            assetType: holding.assetType,
+            coinGeckoId: holding.coinGeckoId
+        )
+        let result = await historicalPriceService.fetchPriceHistory(for: [lookup], from: startDate)
+        let raw = result[holding.symbol] ?? [:]
+        priceHistory = raw.map { (date: $0.key, price: $0.value) }
+            .sorted { $0.date < $1.date }
+        isLoadingHistory = false
+    }
+
+    @ViewBuilder
+    private var priceHistoryCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Price History")
+                    .font(.headline)
+                Spacer()
+                Picker("Range", selection: $priceRange) {
+                    ForEach(PerformanceRange.allCases) { r in
+                        Text(r.rawValue).tag(r)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 220)
+            }
+
+            if isLoadingHistory {
+                ProgressView().frame(height: 160)
+            } else if priceHistory.isEmpty {
+                Text("No price data")
+                    .foregroundStyle(.secondary)
+                    .frame(height: 160)
+            } else {
+                Chart(priceHistory, id: \.date) { point in
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Price", point.price)
+                    )
+                    .foregroundStyle(Color.accentColor)
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Price", point.price)
+                    )
+                    .foregroundStyle(Color.accentColor.opacity(0.15))
+                }
+                .frame(height: 160)
+                .chartXAxis(.hidden)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+        .padding(.horizontal)
     }
 
     // MARK: - Trades

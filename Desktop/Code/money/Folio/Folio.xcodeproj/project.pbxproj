@@ -25,6 +25,7 @@
 		4428ADA802635CFDDAC60513 /* NewsItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE60E0E6935355C9CD29B6DC /* NewsItem.swift */; };
 		463C3793C0130334D9AED41E /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA421DDEA4102D8E060FFE53 /* PortfolioViewModel.swift */; };
 		4FA27F37E8E851C74A3A4D94 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CB88E3C82BA8F0448CB304 /* ContentView.swift */; };
+		4FFC4E6458142670B10FD119 /* FolioWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00859364915CA888B57BEB23 /* FolioWidget.swift */; };
 		57FAB842536192D5239EC981 /* PriceServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */; };
 		5F221C7A627CFCBF94276B9C /* WatchlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */; };
 		5FDCBBF4234D8ED902ACEA74 /* ManagePortfoliosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6555D04E472EB9F91F2833 /* ManagePortfoliosView.swift */; };
@@ -51,8 +52,12 @@
 		C87949E11699A77C830E4DF9 /* Portfolio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43030F6E26031128C2DDD440 /* Portfolio.swift */; };
 		D5AB90888249B38E0F8B7011 /* AssetQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A8A7D05C52A941A77904A /* AssetQuote.swift */; };
 		D96450547084EA9F656D7BCB /* AssetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD7C8C003949A4C8DF8FF59 /* AssetDetailView.swift */; };
+		DE75479EA6E3CA89B76C9C8B /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F962F6784CC0AA2E557E80A /* SwiftUI.framework */; };
+		DF8844FFA9A01D578BAC6E29 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D19281FA30AB14AC42F7D9D /* WidgetKit.framework */; };
 		E3B9575AF448516F3052A309 /* AssetType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0511269A6146088E532D4276 /* AssetType.swift */; };
 		E5D9940C487F766DCC0B52AF /* TransactionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010E547717A95F5409410912 /* TransactionHistoryView.swift */; };
+		F88D6177EC25B68658483954 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E560BC24373B90ADB35805CE /* SettingsView.swift */; };
+		FC89677A7E8818694BF914FF /* FolioWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5EA1204B300960E08D2B68C9 /* FolioWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FCC4FB7FC051608C6775394B /* PortfolioInsightsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB4C996DD4AA6F1472C02859 /* PortfolioInsightsService.swift */; };
 		FF1FA90550F202A819937D8D /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A854E1794E1BDAB269B5B26 /* AnalyticsView.swift */; };
 		FF2E2EE25E31195F7A164D41 /* TimeSeriesEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15602CD7E219F0CCC8E55F21 /* TimeSeriesEngineTests.swift */; };
@@ -66,9 +71,31 @@
 			remoteGlobalIDString = 0C56AF64BE26DB444D566E60;
 			remoteInfo = Folio;
 		};
+		E213980B1964D91692027F4B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 383A8F7C70F35B855AA13D98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 45B2CBA622765AFB996B5127;
+			remoteInfo = FolioWidget;
+		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		1EC4B01E99A3DD20DEFE6BEC /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FC89677A7E8818694BF914FF /* FolioWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		00859364915CA888B57BEB23 /* FolioWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolioWidget.swift; sourceTree = "<group>"; };
 		010E547717A95F5409410912 /* TransactionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionHistoryView.swift; sourceTree = "<group>"; };
 		03ABCFE2065F0750A4019025 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		0511269A6146088E532D4276 /* AssetType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetType.swift; sourceTree = "<group>"; };
@@ -81,10 +108,12 @@
 		1600E44FF15602B0B9D9D915 /* EventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsService.swift; sourceTree = "<group>"; };
 		18B54DD31DA6336A4B3CC46E /* AddWatchlistItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWatchlistItemView.swift; sourceTree = "<group>"; };
 		1C86A6E280AB9189772FF395 /* CurrencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyService.swift; sourceTree = "<group>"; };
+		1D19281FA30AB14AC42F7D9D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		21723B32CCB11B08A06255DA /* NewsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsService.swift; sourceTree = "<group>"; };
 		2829AA309AC5FCCCA3071D23 /* TradeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDetailView.swift; sourceTree = "<group>"; };
 		2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistViewModelTests.swift; sourceTree = "<group>"; };
 		2E10A0684931E99469B4B98A /* TimeSeriesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSeriesEngine.swift; sourceTree = "<group>"; };
+		2F962F6784CC0AA2E557E80A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		3109B62C85F16B939451C93C /* TradeAnalyticsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeAnalyticsEngineTests.swift; sourceTree = "<group>"; };
 		3CAC81244D85E15EA03AD7CD /* PriceAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceAlert.swift; sourceTree = "<group>"; };
 		43030F6E26031128C2DDD440 /* Portfolio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Portfolio.swift; sourceTree = "<group>"; };
@@ -94,6 +123,7 @@
 		5923DF74995C7E4C35D65F7F /* AlertsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsService.swift; sourceTree = "<group>"; };
 		5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceServiceProtocol.swift; sourceTree = "<group>"; };
 		5B8BAAD0990BFEBF5AC22207 /* Folio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Folio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5EA1204B300960E08D2B68C9 /* FolioWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FolioWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6917C01D9862477D1297118F /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
 		6BB51A125EC50A54621232F6 /* FolioTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6555D04E472EB9F91F2833 /* ManagePortfoliosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagePortfoliosView.swift; sourceTree = "<group>"; };
@@ -116,12 +146,25 @@
 		DEA67FB49323078E74F43F30 /* AssetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetViewModelTests.swift; sourceTree = "<group>"; };
 		E0A694C786285E3C92279B1F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		E327DAB16D9FE9CEF80F1006 /* PortfolioViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioViewModelTests.swift; sourceTree = "<group>"; };
+		E560BC24373B90ADB35805CE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E6039D8FDB48F449AE75E71E /* WatchlistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistView.swift; sourceTree = "<group>"; };
 		E751A4E67B72FC1451B55739 /* AddAssetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddAssetView.swift; sourceTree = "<group>"; };
 		EB4C996DD4AA6F1472C02859 /* PortfolioInsightsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioInsightsService.swift; sourceTree = "<group>"; };
 		ED4556A712E7A2B56DE80CBD /* FolioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolioApp.swift; sourceTree = "<group>"; };
 		EE60E0E6935355C9CD29B6DC /* NewsItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsItem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2518D55B60AF14966D1025D0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DF8844FFA9A01D578BAC6E29 /* WidgetKit.framework in Frameworks */,
+				DE75479EA6E3CA89B76C9C8B /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		064A52C0C12D1BC79F9C03AB /* Portfolios */ = {
@@ -131,6 +174,14 @@
 				0987CF55427CE3605B916650 /* PortfoliosViewModel.swift */,
 			);
 			path = Portfolios;
+			sourceTree = "<group>";
+		};
+		0708E1EE9BA65A28DA47A731 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				E560BC24373B90ADB35805CE /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		1543703B8DF8AD691D9CCB53 /* Extensions */ = {
@@ -146,6 +197,8 @@
 			children = (
 				D43EB5CE0E77CD5592721DA7 /* Folio */,
 				360934E47C7F5273A0F37E7B /* FolioTests */,
+				9B1AD7CDB66A45DC930859FB /* FolioWidget */,
+				403760DA721F9A191A501070 /* Frameworks */,
 				62523BE78BDC40FAA03B8BBD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -195,6 +248,15 @@
 			path = FolioTests;
 			sourceTree = "<group>";
 		};
+		403760DA721F9A191A501070 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2F962F6784CC0AA2E557E80A /* SwiftUI.framework */,
+				1D19281FA30AB14AC42F7D9D /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		4CCE030C8C25E49263B7E94D /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -208,6 +270,7 @@
 			children = (
 				5B8BAAD0990BFEBF5AC22207 /* Folio.app */,
 				6BB51A125EC50A54621232F6 /* FolioTests.xctest */,
+				5EA1204B300960E08D2B68C9 /* FolioWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -254,6 +317,7 @@
 				7FA42AC82A4AC3F0AC6D7804 /* Analytics */,
 				88480255158D5B212F402B12 /* Portfolio */,
 				064A52C0C12D1BC79F9C03AB /* Portfolios */,
+				0708E1EE9BA65A28DA47A731 /* Settings */,
 				1C294D9F314E4708E67984A9 /* Watchlist */,
 			);
 			path = Features;
@@ -276,6 +340,14 @@
 				0EABAAB6E515602872288F17 /* TradeAnalyticsEngine.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		9B1AD7CDB66A45DC930859FB /* FolioWidget */ = {
+			isa = PBXGroup;
+			children = (
+				00859364915CA888B57BEB23 /* FolioWidget.swift */,
+			);
+			path = FolioWidget;
 			sourceTree = "<group>";
 		};
 		9EC64D7FA93D335617D3A89A /* Views */ = {
@@ -327,10 +399,12 @@
 			buildPhases = (
 				3859F542EDB723E250691952 /* Sources */,
 				8AF20F2D7ED0809F38E8AD11 /* Resources */,
+				1EC4B01E99A3DD20DEFE6BEC /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F4782FB3B89921579DB7793E /* PBXTargetDependency */,
 			);
 			name = Folio;
 			packageProductDependencies = (
@@ -356,6 +430,24 @@
 			productName = FolioTests;
 			productReference = 6BB51A125EC50A54621232F6 /* FolioTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		45B2CBA622765AFB996B5127 /* FolioWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B4E2B633901047F82B674621 /* Build configuration list for PBXNativeTarget "FolioWidget" */;
+			buildPhases = (
+				5462C277459DF8F2C121DE1E /* Sources */,
+				2518D55B60AF14966D1025D0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FolioWidget;
+			packageProductDependencies = (
+			);
+			productName = FolioWidget;
+			productReference = 5EA1204B300960E08D2B68C9 /* FolioWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -388,6 +480,7 @@
 			targets = (
 				0C56AF64BE26DB444D566E60 /* Folio */,
 				1CD6F615502B2F1F3198986F /* FolioTests */,
+				45B2CBA622765AFB996B5127 /* FolioWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -453,6 +546,7 @@
 				2A95F82CE8FA332570EB6BBF /* PriceService.swift in Sources */,
 				57FAB842536192D5239EC981 /* PriceServiceProtocol.swift in Sources */,
 				761415AAB3EFDAA920C6D0CC /* RootView.swift in Sources */,
+				F88D6177EC25B68658483954 /* SettingsView.swift in Sources */,
 				18563EF2EFD258FD36CF85E0 /* TimeSeriesEngine.swift in Sources */,
 				0E11D0AF44E5C604C7CFB049 /* Trade.swift in Sources */,
 				010B55B66B57C771A6083E56 /* TradeAnalyticsEngine.swift in Sources */,
@@ -466,6 +560,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5462C277459DF8F2C121DE1E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4FFC4E6458142670B10FD119 /* FolioWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -473,6 +575,11 @@
 			isa = PBXTargetDependency;
 			target = 0C56AF64BE26DB444D566E60 /* Folio */;
 			targetProxy = D3324344F318CB5AD9CFD593 /* PBXContainerItemProxy */;
+		};
+		F4782FB3B89921579DB7793E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 45B2CBA622765AFB996B5127 /* FolioWidget */;
+			targetProxy = E213980B1964D91692027F4B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -492,6 +599,42 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		3C1D3272A7AD924FBBAEE2AC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app.widget;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		43252AA6E43121E9C13845CB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app.widget;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -693,6 +836,15 @@
 			buildConfigurations = (
 				D3B08A16EE8A1254AC557B5A /* Debug */,
 				E8BDB5BE91E7E273FFFF319A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B4E2B633901047F82B674621 /* Build configuration list for PBXNativeTarget "FolioWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C1D3272A7AD924FBBAEE2AC /* Debug */,
+				43252AA6E43121E9C13845CB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

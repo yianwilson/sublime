@@ -1,9 +1,17 @@
 import SwiftUI
+import Charts
 
 struct AnalyticsView: View {
     @EnvironmentObject private var vm: PortfolioViewModel
 
     private var analytics: TradeAnalytics { vm.tradeAnalytics }
+
+    @AppStorage("analytics.pnlRange") private var pnlRangeRawValue = PerformanceRange.all.rawValue
+
+    private var pnlRange: PerformanceRange {
+        get { PerformanceRange(rawValue: pnlRangeRawValue) ?? .all }
+        nonmutating set { pnlRangeRawValue = newValue.rawValue }
+    }
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -17,7 +25,9 @@ struct AnalyticsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     lifetimeStatsCard
+                    pnlChartCard
                     overallStatsCard
+                    tradingInsightsCard
                     symbolBreakdownCard
                 }
                 .padding()
@@ -125,6 +135,105 @@ struct AnalyticsView: View {
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 4)
+    }
+
+    // MARK: - P&L Dual-Line Chart Card
+
+    private struct PnLPoint: Identifiable {
+        let id = UUID()
+        let date: Date
+        let value: Double
+        let series: String
+    }
+
+    private var pnlChartCard: some View {
+        let realisedFiltered = vm.filteredPerformanceSeries(
+            range: pnlRange,
+            series: vm.realisedPnLSeries
+        )
+        let unrealisedFiltered = vm.filteredPerformanceSeries(
+            range: pnlRange,
+            series: vm.unrealisedPnLSeries
+        )
+        let realisedPoints = realisedFiltered.map {
+            PnLPoint(date: $0.date, value: $0.totalValue, series: "Realised")
+        }
+        let unrealisedPoints = unrealisedFiltered.map {
+            PnLPoint(date: $0.date, value: $0.totalValue, series: "Unrealised")
+        }
+        let hasData = !realisedPoints.isEmpty || !unrealisedPoints.isEmpty
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.regularMaterial)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Realised vs Unrealised P&L")
+                    .font(.headline)
+                    .padding(.horizontal, 4)
+
+                Picker("Range", selection: Binding(
+                    get: { pnlRange },
+                    set: { pnlRange = $0 }
+                )) {
+                    ForEach(PerformanceRange.allCases) { range in
+                        Text(range.rawValue).tag(range)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if !hasData {
+                    Text(vm.isReconstructing
+                         ? "Reconstructing history…"
+                         : "No data yet — refresh to build history.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                } else {
+                    Chart {
+                        ForEach(unrealisedPoints) { point in
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("P&L", point.value),
+                                series: .value("Type", point.series)
+                            )
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(by: .value("Type", point.series))
+                        }
+                        ForEach(realisedPoints) { point in
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("P&L", point.value),
+                                series: .value("Type", point.series)
+                            )
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(by: .value("Type", point.series))
+                        }
+                        RuleMark(y: .value("Zero", 0))
+                            .foregroundStyle(.secondary)
+                            .lineStyle(StrokeStyle(dash: [4]))
+                    }
+                    .chartForegroundStyleScale([
+                        "Realised": Color.blue,
+                        "Unrealised": Color.orange
+                    ])
+                    .frame(height: 180)
+                    .chartYAxis {
+                        AxisMarks(position: .trailing) { value in
+                            AxisValueLabel {
+                                if let v = value.as(Double.self) {
+                                    Text(v.asCurrency(code: vm.baseCurrencyCode))
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                        }
+                    }
+                    .chartLegend(position: .bottom, alignment: .leading)
+                }
+            }
+            .padding(16)
+        }
     }
 
     // MARK: - Overall Stats Card
@@ -245,6 +354,77 @@ struct AnalyticsView: View {
             }
         }
         .padding(.horizontal, 4)
+    }
+
+    // MARK: - Trading Insights
+
+    private var tradingInsights: [String] {
+        let bySymbol = analytics.bySymbol.values
+        var insights: [String] = []
+
+        // Best symbol by win rate (min 2 trades)
+        if let best = bySymbol.filter({ $0.totalTrades >= 2 }).max(by: { $0.winRate < $1.winRate }) {
+            insights.append("Your best win rate is on \(best.symbol) (\(Int(best.winRate))% of \(best.totalTrades) trades)")
+        }
+
+        // Symbol with most trades
+        if let most = bySymbol.max(by: { $0.totalTrades < $1.totalTrades }), most.totalTrades >= 3 {
+            insights.append("\(most.symbol) is your most traded asset with \(most.totalTrades) closed trades")
+        }
+
+        // Worst symbol by realised P&L (min 1 trade, negative P&L only)
+        if let worst = bySymbol.filter({ $0.totalPnL < 0 }).min(by: { $0.totalPnL < $1.totalPnL }) {
+            let formatted = worst.totalPnL.formatted(.currency(code: "USD").presentation(.narrow))
+            insights.append("\(worst.symbol) is your biggest loser: \(formatted)")
+        }
+
+        // Overall profit factor observation (min 5 trades)
+        if analytics.totalTrades >= 5 {
+            if analytics.profitFactor >= 2.0 {
+                insights.append("Strong profit factor of \(String(format: "%.1f", analytics.profitFactor))x — your winners significantly outpace your losers")
+            } else if analytics.profitFactor < 1.0 {
+                insights.append("Profit factor below 1.0 — losses currently outpace gains")
+            }
+        }
+
+        return insights
+    }
+
+    private var tradingInsightsCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.regularMaterial)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Trading Insights")
+                    .font(.headline)
+                    .padding(.horizontal, 4)
+
+                if tradingInsights.isEmpty {
+                    Text("Add trades to unlock insights.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 8)
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(tradingInsights, id: \.self) { insight in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text(insight)
+                                    .font(.subheadline)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.horizontal, 4)
+                        }
+                    }
+                    .padding(.bottom, 4)
+                }
+            }
+            .padding(16)
+        }
     }
 
     // MARK: - Symbol Breakdown Card

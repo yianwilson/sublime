@@ -208,6 +208,26 @@ final class PortfolioViewModel: ObservableObject {
         snapshots
     }
 
+    /// Cumulative realised P&L series (AUD) — one point per closed trade sorted by exit date.
+    var realisedPnLSeries: [PerformanceSnapshot] {
+        let trades = holdings
+            .flatMap { FIFOEngine.closedTrades(from: $0.transactions) }
+            .sorted { $0.exitDate < $1.exitDate }
+        guard !trades.isEmpty else { return [] }
+        var cumulative = 0.0
+        return trades.map { trade in
+            cumulative += trade.pnl * audPerUSD
+            return PerformanceSnapshot(date: trade.exitDate, totalValue: cumulative)
+        }
+    }
+
+    /// Unrealised P&L series (AUD) — maps reconstructedSeries to (portfolio value − current cost basis).
+    var unrealisedPnLSeries: [PerformanceSnapshot] {
+        reconstructedSeries.map {
+            PerformanceSnapshot(date: $0.date, totalValue: $0.totalValue - totalCostBasis)
+        }
+    }
+
     func filteredPerformanceSeries(
         range: PerformanceRange,
         series: [PerformanceSnapshot]? = nil,

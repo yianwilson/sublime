@@ -47,6 +47,16 @@ struct TradeDetailView: View {
                         accent: annualisedReturn >= 0 ? .green : .red
                     )
                 }
+
+                if let notes = trade.entryNotes, !notes.isEmpty {
+                    Section("Notes") {
+                        HStack(alignment: .top) {
+                            Text("Notes").foregroundStyle(.secondary)
+                            Spacer()
+                            Text(notes).multilineTextAlignment(.trailing)
+                        }
+                    }
+                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Trade Detail")

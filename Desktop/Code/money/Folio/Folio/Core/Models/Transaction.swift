@@ -20,4 +20,5 @@ struct Transaction: Identifiable, Codable, Equatable {
     var price: Double            // per unit, USD
     var fee: Double              // total transaction fee, USD
     var date: Date
+    var notes: String?
 }

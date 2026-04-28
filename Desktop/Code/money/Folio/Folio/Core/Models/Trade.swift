@@ -11,6 +11,31 @@ struct Trade: Identifiable {
     let exitPrice: Double
     let exitDate: Date
     let fee: Double
+    let entryNotes: String?
+
+    init(
+        id: String,
+        symbol: String,
+        assetType: AssetType,
+        quantity: Double,
+        entryPrice: Double,
+        entryDate: Date,
+        exitPrice: Double,
+        exitDate: Date,
+        fee: Double,
+        entryNotes: String? = nil
+    ) {
+        self.id = id
+        self.symbol = symbol
+        self.assetType = assetType
+        self.quantity = quantity
+        self.entryPrice = entryPrice
+        self.entryDate = entryDate
+        self.exitPrice = exitPrice
+        self.exitDate = exitDate
+        self.fee = fee
+        self.entryNotes = entryNotes
+    }
 
     var pnl: Double { quantity * (exitPrice - entryPrice) - fee }
     var pnlPercent: Double {

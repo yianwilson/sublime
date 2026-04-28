@@ -13,6 +13,7 @@ struct AddAssetView: View {
                 searchSection
                 detailsSection
                 transactionSection
+                notesSection
             }
             .navigationTitle("Add Transaction")
             .navigationBarTitleDisplayMode(.inline)
@@ -171,6 +172,15 @@ struct AddAssetView: View {
                         .fontWeight(.medium)
                 }
             }
+        }
+    }
+
+    // MARK: - Notes Section
+
+    private var notesSection: some View {
+        Section("Notes (optional)") {
+            TextField("e.g. earnings play, stop loss hit", text: $vm.notes, axis: .vertical)
+                .lineLimit(2...4)
         }
     }
 

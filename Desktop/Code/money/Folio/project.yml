@@ -32,6 +32,9 @@ targets:
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_STYLE: Automatic
         ENABLE_PREVIEWS: YES
+    dependencies:
+      - target: FolioWidget
+        embed: true
     scheme:
       testTargets:
         - FolioTests
@@ -49,3 +52,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.folio.tests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "5.9"
+
+  FolioWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: FolioWidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.folio.app.widget
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework

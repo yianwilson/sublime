@@ -97,14 +97,14 @@ enum FIFOEngine {
         guard let first = transactions.first else { return [] }
         let sorted = transactions.sorted { $0.date < $1.date }
 
-        struct Lot { var date: Date; var quantity: Double; let price: Double }
+        struct Lot { var date: Date; var quantity: Double; let price: Double; let notes: String? }
         var lots: [Lot] = []
         var trades: [Trade] = []
 
         for tx in sorted {
             switch tx.type {
             case .buy:
-                lots.append(Lot(date: tx.date, quantity: tx.quantity, price: tx.price))
+                lots.append(Lot(date: tx.date, quantity: tx.quantity, price: tx.price, notes: tx.notes))
             case .sell:
                 var remaining = tx.quantity
                 while remaining > 0, !lots.isEmpty {
@@ -119,7 +119,8 @@ enum FIFOEngine {
                         entryDate: lots[0].date,
                         exitPrice: tx.price,
                         exitDate: tx.date,
-                        fee: attributedFee
+                        fee: attributedFee,
+                        entryNotes: lots[0].notes
                     ))
                     lots[0].quantity -= matched
                     remaining -= matched
