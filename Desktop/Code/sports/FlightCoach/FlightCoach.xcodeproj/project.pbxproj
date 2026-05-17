@@ -1,0 +1,630 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0135269068AACF27EBBC1E90 /* AnalysisResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF91877A6AEDFB944B6ACB15 /* AnalysisResultScreen.swift */; };
+		0D69A28725C3F5E00DEA5238 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E537E0A6B8DE61131A0AB640 /* SettingsScreen.swift */; };
+		0E1AF8E07143B8BA91C1F7A1 /* SportSelectScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C6D119DD1D80A31E869F2F /* SportSelectScreen.swift */; };
+		140107DB7DE2E64CE2A45107 /* SessionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD4E7FA40247C32AC0EA9A2 /* SessionRepository.swift */; };
+		1675843FB20303E20D714E5F /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B22BCF218E3F1A6C2C0F5BA /* Vision.framework */; };
+		214F0670F7ABC8BA6F09CAC4 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BBFD2053C0C947F4E60A98 /* HomeScreen.swift */; };
+		21BAF8CEE0CA3F2D87F631CE /* AnalysisPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D884B6874F31C48DFED693 /* AnalysisPipeline.swift */; };
+		34DFDBB87B4065F93C587BE6 /* PoseModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE315357D9230274BD1244D /* PoseModels.swift */; };
+		367F114EF30E324AF6A122B5 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FCA187CCA597280589270B /* VideoPlayerView.swift */; };
+		3983A8A8100787CCD28BDF5C /* PoseDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A578848BB1E08D0AFA393E7 /* PoseDetectionService.swift */; };
+		3A2322362A478F87E7223FC3 /* SessionSetupScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29F43EE3D28878F079ECB33 /* SessionSetupScreen.swift */; };
+		3B17CD0C5BA8E5DDCC98CB1A /* VideoImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367143DCAADF181256CA940 /* VideoImportManager.swift */; };
+		3BCAA09A1DEF82F8C6D6EF7F /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 886BF4951A45BE3748C29BAA /* AVFoundation.framework */; };
+		4A6993B6EF5517277CA9D339 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A01AD4D506B4A6E0034E66 /* Photos.framework */; };
+		4B106E3A90FEC3F406732951 /* PracticeSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */; };
+		54BDAE176BCB59B2D026115F /* TennisAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D9B4193198D5AF41E58763 /* TennisAnalysisService.swift */; };
+		5E3752CD602966DC312C5D1A /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FF87799B617A4688736406F /* SharedComponents.swift */; };
+		61B3B72A4DF9A29E49ADD648 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F7B6B83F632A2662CF0277D /* CameraManager.swift */; };
+		626C980F51BAF14E09BF41A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BD0A9A58A88BBA3FB69D222 /* Assets.xcassets */; };
+		6434F3329413CEB3F7D40FEC /* ManualCorrectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F9BEE60616043BE0C9C651 /* ManualCorrectionService.swift */; };
+		6D28E6A8E5DEB0A9C62BA005 /* AnalysisModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3388BE38556D44B2B809C244 /* AnalysisModels.swift */; };
+		70490BACAC39693B2AC2D3B5 /* CameraRecordingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE6317FF1040E082329C4CE /* CameraRecordingScreen.swift */; };
+		72A815E52A82A704FFAE6DD7 /* SportType.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE65D5246F5F9CEB9D34F774 /* SportType.swift */; };
+		7680764FDAE6D9F8329C0088 /* ManualCorrection+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4AFEEB0E06D1FAE1B7973 /* ManualCorrection+Extensions.swift */; };
+		770BA49355867217152D186C /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3719FB3034E93D009DDF39C /* CoreData.framework */; };
+		7A0D1EEE9114C25768E5686E /* AnalysisProgressScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803D6929DC877E255ED4348A /* AnalysisProgressScreen.swift */; };
+		7A7C9E11548EA706990D4AD6 /* VideoStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E39D03178E00203FB92B7B /* VideoStorageService.swift */; };
+		8837102B7D126D9BBAC8846D /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62DB1816CD6EC3A5CB17745F /* CoreML.framework */; };
+		90576A54987A90A64A87F5C0 /* GolfAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C8848FDD59ABC2F4BB59E5 /* GolfAnalysisService.swift */; };
+		A67FFBE123BDCE8C6A241B3E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78759410E08F12E42327BFD /* ContentView.swift */; };
+		A9429444894575F13333C65E /* ContactDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91E8276C5F1381C89B41EE2 /* ContactDetectionService.swift */; };
+		ABCFCB45AF267D0FDD5656F3 /* SessionHistoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD02556ECE22E35D4A748372 /* SessionHistoryScreen.swift */; };
+		B3EABFCD07D2A00AE881BC53 /* VideoFrameExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10581589C96AA9278A867D59 /* VideoFrameExtractor.swift */; };
+		B5FDADD7FF6F369D4FFD2CDC /* FlightCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35B5708E63CFF7EC209F648 /* FlightCoachApp.swift */; };
+		BEC0F29098B59201C333B973 /* PhotosUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E9EB010F9AA9CC7B98B70353 /* PhotosUI.framework */; };
+		C3642F71EB1CA0AE1C9A89CC /* OverlayRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461E6369F874502914F2D07A /* OverlayRenderer.swift */; };
+		DEAA853DF4A9962AE1DA740C /* ManualCorrectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB646E833409804658C6112 /* ManualCorrectionSheet.swift */; };
+		EC7A776E3A52A563B71EDB08 /* FeedbackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFA2EDFDEE5C1AFA5E44C64 /* FeedbackEngine.swift */; };
+		F72396104BED978706E07C00 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A6BB7C96082146FE3D70E4 /* AppTheme.swift */; };
+		F9433A0EE6A471D21B4DF47F /* BallTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AB4E8504AEC502E7435CF2D /* BallTrackingService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		02A6BB7C96082146FE3D70E4 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		0FE315357D9230274BD1244D /* PoseModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseModels.swift; sourceTree = "<group>"; };
+		10581589C96AA9278A867D59 /* VideoFrameExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoFrameExtractor.swift; sourceTree = "<group>"; };
+		16A01AD4D506B4A6E0034E66 /* Photos.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Photos.framework; path = System/Library/Frameworks/Photos.framework; sourceTree = SDKROOT; };
+		24BBFD2053C0C947F4E60A98 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
+		251D7A1C77826C593126B0C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3388BE38556D44B2B809C244 /* AnalysisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisModels.swift; sourceTree = "<group>"; };
+		35D884B6874F31C48DFED693 /* AnalysisPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisPipeline.swift; sourceTree = "<group>"; };
+		3B22BCF218E3F1A6C2C0F5BA /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
+		461E6369F874502914F2D07A /* OverlayRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRenderer.swift; sourceTree = "<group>"; };
+		46D9B4193198D5AF41E58763 /* TennisAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TennisAnalysisService.swift; sourceTree = "<group>"; };
+		4AB4E8504AEC502E7435CF2D /* BallTrackingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BallTrackingService.swift; sourceTree = "<group>"; };
+		51C6D119DD1D80A31E869F2F /* SportSelectScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportSelectScreen.swift; sourceTree = "<group>"; };
+		5A578848BB1E08D0AFA393E7 /* PoseDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseDetectionService.swift; sourceTree = "<group>"; };
+		5BD0A9A58A88BBA3FB69D222 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		62DB1816CD6EC3A5CB17745F /* CoreML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreML.framework; path = System/Library/Frameworks/CoreML.framework; sourceTree = SDKROOT; };
+		6DB646E833409804658C6112 /* ManualCorrectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCorrectionSheet.swift; sourceTree = "<group>"; };
+		71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSession.swift; sourceTree = "<group>"; };
+		72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FlightCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		75F9BEE60616043BE0C9C651 /* ManualCorrectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCorrectionService.swift; sourceTree = "<group>"; };
+		75FCA187CCA597280589270B /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
+		77E39D03178E00203FB92B7B /* VideoStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStorageService.swift; sourceTree = "<group>"; };
+		7FF87799B617A4688736406F /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
+		803D6929DC877E255ED4348A /* AnalysisProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisProgressScreen.swift; sourceTree = "<group>"; };
+		886BF4951A45BE3748C29BAA /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		9F7B6B83F632A2662CF0277D /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		A3719FB3034E93D009DDF39C /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		B367143DCAADF181256CA940 /* VideoImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportManager.swift; sourceTree = "<group>"; };
+		B4B4AFEEB0E06D1FAE1B7973 /* ManualCorrection+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ManualCorrection+Extensions.swift"; sourceTree = "<group>"; };
+		B78759410E08F12E42327BFD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		CAD4E7FA40247C32AC0EA9A2 /* SessionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRepository.swift; sourceTree = "<group>"; };
+		D29F43EE3D28878F079ECB33 /* SessionSetupScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetupScreen.swift; sourceTree = "<group>"; };
+		D35B5708E63CFF7EC209F648 /* FlightCoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightCoachApp.swift; sourceTree = "<group>"; };
+		DD02556ECE22E35D4A748372 /* SessionHistoryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryScreen.swift; sourceTree = "<group>"; };
+		DDFA2EDFDEE5C1AFA5E44C64 /* FeedbackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackEngine.swift; sourceTree = "<group>"; };
+		E537E0A6B8DE61131A0AB640 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		E91E8276C5F1381C89B41EE2 /* ContactDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetectionService.swift; sourceTree = "<group>"; };
+		E9EB010F9AA9CC7B98B70353 /* PhotosUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PhotosUI.framework; path = System/Library/Frameworks/PhotosUI.framework; sourceTree = SDKROOT; };
+		EE65D5246F5F9CEB9D34F774 /* SportType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportType.swift; sourceTree = "<group>"; };
+		EEE6317FF1040E082329C4CE /* CameraRecordingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRecordingScreen.swift; sourceTree = "<group>"; };
+		EF91877A6AEDFB944B6ACB15 /* AnalysisResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisResultScreen.swift; sourceTree = "<group>"; };
+		F1C8848FDD59ABC2F4BB59E5 /* GolfAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfAnalysisService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D46AC937E949D0C91483A18A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BCAA09A1DEF82F8C6D6EF7F /* AVFoundation.framework in Frameworks */,
+				1675843FB20303E20D714E5F /* Vision.framework in Frameworks */,
+				8837102B7D126D9BBAC8846D /* CoreML.framework in Frameworks */,
+				4A6993B6EF5517277CA9D339 /* Photos.framework in Frameworks */,
+				BEC0F29098B59201C333B973 /* PhotosUI.framework in Frameworks */,
+				770BA49355867217152D186C /* CoreData.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		136C6597D94A599E2C56157B /* SportSelect */ = {
+			isa = PBXGroup;
+			children = (
+				51C6D119DD1D80A31E869F2F /* SportSelectScreen.swift */,
+			);
+			path = SportSelect;
+			sourceTree = "<group>";
+		};
+		19AE467766AB6DA9A66D0ABA = {
+			isa = PBXGroup;
+			children = (
+				978C4DF70BC74E4CDB4B0DF6 /* FlightCoach */,
+				67E23A5AFE653744C6B4FBD4 /* Frameworks */,
+				3A84FA8E67125E2B01C88CB0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1C9170F4B8E84ED3CCC859E4 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				02A6BB7C96082146FE3D70E4 /* AppTheme.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		32AEC0E3A053B418F9BDF112 /* Analysis */ = {
+			isa = PBXGroup;
+			children = (
+				803D6929DC877E255ED4348A /* AnalysisProgressScreen.swift */,
+				EF91877A6AEDFB944B6ACB15 /* AnalysisResultScreen.swift */,
+				EEE6317FF1040E082329C4CE /* CameraRecordingScreen.swift */,
+				6DB646E833409804658C6112 /* ManualCorrectionSheet.swift */,
+			);
+			path = Analysis;
+			sourceTree = "<group>";
+		};
+		3A84FA8E67125E2B01C88CB0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		50978EA64A01D17FF7AC7C4A /* Playback */ = {
+			isa = PBXGroup;
+			children = (
+				75FCA187CCA597280589270B /* VideoPlayerView.swift */,
+			);
+			path = Playback;
+			sourceTree = "<group>";
+		};
+		58E2A8669F3AC0268800DBD8 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				24BBFD2053C0C947F4E60A98 /* HomeScreen.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		5CD0BC059E10ED4881CCD223 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				E537E0A6B8DE61131A0AB640 /* SettingsScreen.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		5E15E63E121111489FA6E076 /* SessionHistory */ = {
+			isa = PBXGroup;
+			children = (
+				DD02556ECE22E35D4A748372 /* SessionHistoryScreen.swift */,
+			);
+			path = SessionHistory;
+			sourceTree = "<group>";
+		};
+		67E23A5AFE653744C6B4FBD4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				886BF4951A45BE3748C29BAA /* AVFoundation.framework */,
+				A3719FB3034E93D009DDF39C /* CoreData.framework */,
+				62DB1816CD6EC3A5CB17745F /* CoreML.framework */,
+				16A01AD4D506B4A6E0034E66 /* Photos.framework */,
+				E9EB010F9AA9CC7B98B70353 /* PhotosUI.framework */,
+				3B22BCF218E3F1A6C2C0F5BA /* Vision.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7C1D493B4449CAA3676E1C47 /* SessionSetup */ = {
+			isa = PBXGroup;
+			children = (
+				D29F43EE3D28878F079ECB33 /* SessionSetupScreen.swift */,
+			);
+			path = SessionSetup;
+			sourceTree = "<group>";
+		};
+		8E1AC753ECD1A292BD96316A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				5BD0A9A58A88BBA3FB69D222 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		91C9661C8B1E3A5A3294FCEB /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				35D884B6874F31C48DFED693 /* AnalysisPipeline.swift */,
+				4AB4E8504AEC502E7435CF2D /* BallTrackingService.swift */,
+				9F7B6B83F632A2662CF0277D /* CameraManager.swift */,
+				E91E8276C5F1381C89B41EE2 /* ContactDetectionService.swift */,
+				DDFA2EDFDEE5C1AFA5E44C64 /* FeedbackEngine.swift */,
+				F1C8848FDD59ABC2F4BB59E5 /* GolfAnalysisService.swift */,
+				75F9BEE60616043BE0C9C651 /* ManualCorrectionService.swift */,
+				461E6369F874502914F2D07A /* OverlayRenderer.swift */,
+				5A578848BB1E08D0AFA393E7 /* PoseDetectionService.swift */,
+				46D9B4193198D5AF41E58763 /* TennisAnalysisService.swift */,
+				10581589C96AA9278A867D59 /* VideoFrameExtractor.swift */,
+				B367143DCAADF181256CA940 /* VideoImportManager.swift */,
+				77E39D03178E00203FB92B7B /* VideoStorageService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		978C4DF70BC74E4CDB4B0DF6 /* FlightCoach */ = {
+			isa = PBXGroup;
+			children = (
+				251D7A1C77826C593126B0C8 /* Info.plist */,
+				B978D50406AD8E7A7E60F2CE /* App */,
+				C0EC87DACA5B2AF28D2752DD /* Core */,
+				CA201B8B40DD94C6D7B5BC30 /* Features */,
+				8E1AC753ECD1A292BD96316A /* Resources */,
+				ACFD55AB604288EB9F95B134 /* Shared */,
+			);
+			path = FlightCoach;
+			sourceTree = "<group>";
+		};
+		AA4B780945AFD5B81ABCCEC9 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				7FF87799B617A4688736406F /* SharedComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		ABE2A303A958D26A93832412 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				3388BE38556D44B2B809C244 /* AnalysisModels.swift */,
+				0FE315357D9230274BD1244D /* PoseModels.swift */,
+				71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */,
+				EE65D5246F5F9CEB9D34F774 /* SportType.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		ACFD55AB604288EB9F95B134 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AA4B780945AFD5B81ABCCEC9 /* Components */,
+				FE3E4761AA99A36A9C7CE24A /* Extensions */,
+				1C9170F4B8E84ED3CCC859E4 /* Utilities */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		B7A80FAFE9F93B9C153F8F4B /* Repository */ = {
+			isa = PBXGroup;
+			children = (
+				CAD4E7FA40247C32AC0EA9A2 /* SessionRepository.swift */,
+			);
+			path = Repository;
+			sourceTree = "<group>";
+		};
+		B978D50406AD8E7A7E60F2CE /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B78759410E08F12E42327BFD /* ContentView.swift */,
+				D35B5708E63CFF7EC209F648 /* FlightCoachApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C0EC87DACA5B2AF28D2752DD /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				ABE2A303A958D26A93832412 /* Models */,
+				B7A80FAFE9F93B9C153F8F4B /* Repository */,
+				91C9661C8B1E3A5A3294FCEB /* Services */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		CA201B8B40DD94C6D7B5BC30 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				32AEC0E3A053B418F9BDF112 /* Analysis */,
+				58E2A8669F3AC0268800DBD8 /* Home */,
+				50978EA64A01D17FF7AC7C4A /* Playback */,
+				5E15E63E121111489FA6E076 /* SessionHistory */,
+				7C1D493B4449CAA3676E1C47 /* SessionSetup */,
+				5CD0BC059E10ED4881CCD223 /* Settings */,
+				136C6597D94A599E2C56157B /* SportSelect */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		FE3E4761AA99A36A9C7CE24A /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				B4B4AFEEB0E06D1FAE1B7973 /* ManualCorrection+Extensions.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A6295D71E29813E88592AF81 /* FlightCoach */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9345D4EFEFC7A011AFE3CD4A /* Build configuration list for PBXNativeTarget "FlightCoach" */;
+			buildPhases = (
+				72B4C479572C9B5A265B6832 /* Sources */,
+				F475958FDFC14177D419613A /* Resources */,
+				D46AC937E949D0C91483A18A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FlightCoach;
+			packageProductDependencies = (
+			);
+			productName = FlightCoach;
+			productReference = 72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C6AA0749670941B584B46041 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A6295D71E29813E88592AF81 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = F319508F4B0F337D48053254 /* Build configuration list for PBXProject "FlightCoach" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 19AE467766AB6DA9A66D0ABA;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A6295D71E29813E88592AF81 /* FlightCoach */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F475958FDFC14177D419613A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				626C980F51BAF14E09BF41A1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		72B4C479572C9B5A265B6832 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6D28E6A8E5DEB0A9C62BA005 /* AnalysisModels.swift in Sources */,
+				21BAF8CEE0CA3F2D87F631CE /* AnalysisPipeline.swift in Sources */,
+				7A0D1EEE9114C25768E5686E /* AnalysisProgressScreen.swift in Sources */,
+				0135269068AACF27EBBC1E90 /* AnalysisResultScreen.swift in Sources */,
+				F72396104BED978706E07C00 /* AppTheme.swift in Sources */,
+				F9433A0EE6A471D21B4DF47F /* BallTrackingService.swift in Sources */,
+				61B3B72A4DF9A29E49ADD648 /* CameraManager.swift in Sources */,
+				70490BACAC39693B2AC2D3B5 /* CameraRecordingScreen.swift in Sources */,
+				A9429444894575F13333C65E /* ContactDetectionService.swift in Sources */,
+				A67FFBE123BDCE8C6A241B3E /* ContentView.swift in Sources */,
+				EC7A776E3A52A563B71EDB08 /* FeedbackEngine.swift in Sources */,
+				B5FDADD7FF6F369D4FFD2CDC /* FlightCoachApp.swift in Sources */,
+				90576A54987A90A64A87F5C0 /* GolfAnalysisService.swift in Sources */,
+				214F0670F7ABC8BA6F09CAC4 /* HomeScreen.swift in Sources */,
+				7680764FDAE6D9F8329C0088 /* ManualCorrection+Extensions.swift in Sources */,
+				6434F3329413CEB3F7D40FEC /* ManualCorrectionService.swift in Sources */,
+				DEAA853DF4A9962AE1DA740C /* ManualCorrectionSheet.swift in Sources */,
+				C3642F71EB1CA0AE1C9A89CC /* OverlayRenderer.swift in Sources */,
+				3983A8A8100787CCD28BDF5C /* PoseDetectionService.swift in Sources */,
+				34DFDBB87B4065F93C587BE6 /* PoseModels.swift in Sources */,
+				4B106E3A90FEC3F406732951 /* PracticeSession.swift in Sources */,
+				ABCFCB45AF267D0FDD5656F3 /* SessionHistoryScreen.swift in Sources */,
+				140107DB7DE2E64CE2A45107 /* SessionRepository.swift in Sources */,
+				3A2322362A478F87E7223FC3 /* SessionSetupScreen.swift in Sources */,
+				0D69A28725C3F5E00DEA5238 /* SettingsScreen.swift in Sources */,
+				5E3752CD602966DC312C5D1A /* SharedComponents.swift in Sources */,
+				0E1AF8E07143B8BA91C1F7A1 /* SportSelectScreen.swift in Sources */,
+				72A815E52A82A704FFAE6DD7 /* SportType.swift in Sources */,
+				54BDAE176BCB59B2D026115F /* TennisAnalysisService.swift in Sources */,
+				B3EABFCD07D2A00AE881BC53 /* VideoFrameExtractor.swift in Sources */,
+				3B17CD0C5BA8E5DDCC98CB1A /* VideoImportManager.swift in Sources */,
+				367F114EF30E324AF6A122B5 /* VideoPlayerView.swift in Sources */,
+				7A7C9E11548EA706990D4AD6 /* VideoStorageService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0C26E875451B333D10E8165B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		1599301CD8E12A45ADEDF7D4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = FlightCoach/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.flightcoach.app;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		1F8D55CB37F86B71639694C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = FlightCoach/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.flightcoach.app;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9C4C0CF0BE6EB3409389D885 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9345D4EFEFC7A011AFE3CD4A /* Build configuration list for PBXNativeTarget "FlightCoach" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F8D55CB37F86B71639694C7 /* Debug */,
+				1599301CD8E12A45ADEDF7D4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F319508F4B0F337D48053254 /* Build configuration list for PBXProject "FlightCoach" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C4C0CF0BE6EB3409389D885 /* Debug */,
+				0C26E875451B333D10E8165B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C6AA0749670941B584B46041 /* Project object */;
+}
