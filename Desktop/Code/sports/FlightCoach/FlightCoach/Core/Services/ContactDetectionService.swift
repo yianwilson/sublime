@@ -33,49 +33,57 @@ final class ContactDetectionService {
     }
 
     private func detectImpactFromBallAppearance(ballTrackPoints: [BallTrackPoint]) -> (Int, Float)? {
-        guard ballTrackPoints.count >= 2 else { return nil }
+        guard ballTrackPoints.count >= 4 else { return nil }
+        let sorted = ballTrackPoints.sorted { $0.frameIndex < $1.frameIndex }
 
-        for i in 1..<ballTrackPoints.count {
-            let prev = ballTrackPoints[i - 1]
-            let curr = ballTrackPoints[i]
-            let dx = curr.x - prev.x
-            let dy = curr.y - prev.y
-            let velocity = sqrt(dx * dx + dy * dy)
+        func vel(_ a: BallTrackPoint, _ b: BallTrackPoint) -> Float {
+            let dx = b.x - a.x, dy = b.y - a.y
+            return sqrt(dx * dx + dy * dy)
+        }
 
-            if velocity > 0.04 && curr.confidence > 0.5 {
-                return (curr.frameIndex, min(0.8, curr.confidence * min(1.0, velocity * 10)))
+        // Require: ball was stationary (low velocity) for the frame just before,
+        // then has a sustained velocity increase for at least two consecutive frames.
+        for i in 2..<sorted.count - 1 {
+            let vBefore  = vel(sorted[i - 2], sorted[i - 1])   // pre-impact
+            let vAt      = vel(sorted[i - 1], sorted[i])        // at impact
+            let vAfter   = vel(sorted[i],     sorted[i + 1])    // post-impact
+
+            let wasSteady  = vBefore < 0.018
+            let nowMoving  = vAt > 0.040 && sorted[i].confidence > 0.45
+            let sustained  = vAfter > 0.020
+
+            if wasSteady && nowMoving && sustained {
+                let conf = min(0.85, sorted[i].confidence * min(1.0, vAt * 8))
+                return (sorted[i].frameIndex, conf)
             }
         }
         return nil
     }
 
     private func detectImpactFromWristAcceleration(poseFrames: [PoseFrame]) -> (Int, Float)? {
-        guard poseFrames.count > 4 else { return nil }
+        guard poseFrames.count > 5 else { return nil }
 
-        var maxAcceleration: Float = 0
-        var candidateFrame = poseFrames[0]
-
-        for i in 2..<poseFrames.count - 1 {
-            let prev = poseFrames[i - 2]
+        // Build wrist speed profile
+        var speeds: [(frameIndex: Int, speed: Float, frame: PoseFrame)] = []
+        for i in 1..<poseFrames.count {
+            let prev = poseFrames[i - 1]
             let curr = poseFrames[i]
-
             guard let pw = prev.rightWrist ?? prev.leftWrist,
-                  let cw = curr.rightWrist ?? curr.leftWrist else { continue }
-
-            let dx = cw.x - pw.x
-            let dy = cw.y - pw.y
-            let speed = sqrt(dx * dx + dy * dy)
-
-            if speed > maxAcceleration && cw.confidence > 0.4 {
-                maxAcceleration = speed
-                candidateFrame = curr
-            }
+                  let cw = curr.rightWrist ?? curr.leftWrist,
+                  cw.confidence > 0.35 else { continue }
+            let speed = sqrt(pow(cw.x - pw.x, 2) + pow(cw.y - pw.y, 2))
+            speeds.append((curr.frameIndex, speed, curr))
         }
+        guard speeds.count > 3 else { return nil }
 
-        guard maxAcceleration > 0.02 else { return nil }
+        // Find the speed peak, then walk forward to the first deceleration — that's impact
+        let peakIdx = speeds.indices.max(by: { speeds[$0].speed < speeds[$1].speed }) ?? 0
+        guard speeds[peakIdx].speed > 0.020 else { return nil }
 
-        let confidence = Float(min(0.65, Double(maxAcceleration) * 5.0))
-        return (candidateFrame.frameIndex, confidence)
+        // Impact is at or just after the speed peak (deceleration onset)
+        let impactIdx = min(peakIdx + 1, speeds.count - 1)
+        let confidence = Float(min(0.65, Double(speeds[peakIdx].speed) * 4.5))
+        return (speeds[impactIdx].frameIndex, confidence)
     }
 
     private func estimateImpactFromSwingPhase(poseFrames: [PoseFrame], totalFrames: Int) -> (Int, Float) {
