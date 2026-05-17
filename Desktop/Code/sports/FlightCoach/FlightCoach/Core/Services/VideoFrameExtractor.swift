@@ -65,7 +65,6 @@ final class VideoFrameExtractor {
 
         var frames: [VideoFrame] = []
         var frameIndex = 0
-        let ciContext = CIContext()
 
         while let sampleBuffer = output.copyNextSampleBuffer() {
             defer { frameIndex += 1 }
@@ -81,6 +80,55 @@ final class VideoFrameExtractor {
 
             let progress = Double(frameIndex) / Double(max(1, totalFrames))
             onProgress?(min(progress, 1.0))
+        }
+
+        return frames
+    }
+
+    func extractDenseFrames(
+        around time: TimeInterval,
+        windowSeconds: Double = 3.0,
+        maxFPS: Double = 60,
+        onProgress: ((Double) -> Void)? = nil
+    ) async throws -> [VideoFrame] {
+        let startTime = max(0, time - windowSeconds / 2)
+        let endTime   = min(duration, time + windowSeconds / 2)
+        guard endTime > startTime else { return [] }
+
+        let cmStart = CMTime(seconds: startTime, preferredTimescale: 600)
+        let cmEnd   = CMTime(seconds: endTime,   preferredTimescale: 600)
+
+        let reader = try AVAssetReader(asset: asset)
+        reader.timeRange = CMTimeRange(start: cmStart, end: cmEnd)
+
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+        guard let track = tracks.first else { throw FrameExtractorError.noVideoTrack }
+
+        let outputSettings: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+        ]
+        let output = AVAssetReaderTrackOutput(track: track, outputSettings: outputSettings)
+        output.alwaysCopiesSampleData = false
+        reader.add(output)
+        guard reader.startReading() else { throw FrameExtractorError.readerFailed }
+
+        let denseStride = max(1, Int((frameRate / maxFPS).rounded()))
+        let windowFrameCount = max(1, Int((endTime - startTime) * frameRate))
+        var frames: [VideoFrame] = []
+        var localIndex = 0
+
+        while let sampleBuffer = output.copyNextSampleBuffer() {
+            defer { localIndex += 1 }
+            guard localIndex % denseStride == 0 else { continue }
+
+            let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+            let globalIndex = Int((pts.seconds * frameRate).rounded())
+
+            guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { continue }
+            frames.append(VideoFrame(index: globalIndex, timestamp: pts.seconds, image: CIImage(cvImageBuffer: imageBuffer)))
+
+            onProgress?(Double(localIndex) / Double(windowFrameCount))
+            if localIndex % 20 == 0 { await Task.yield() }
         }
 
         return frames

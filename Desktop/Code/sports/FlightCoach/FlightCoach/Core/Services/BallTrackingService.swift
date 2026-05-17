@@ -1,14 +1,43 @@
 import Foundation
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import Vision
+
+// MARK: - Debug types (accessible to AnalysisResultScreen etc.)
+
+struct BallCandidate {
+    let centroid: CGPoint   // normalised [0,1]
+    let size: Int           // pixel count at working resolution
+    let brightness: Double  // 0–1, mean channel intensity
+    let circularity: Double // 4πA/P², 1.0 = perfect circle
+    let score: Double       // composite quality score
+}
+
+struct BallTrackDebugFrame {
+    let frameIndex: Int
+    let candidates: [BallCandidate]
+    let selectedCentroid: CGPoint?
+    let rejections: [(centroid: CGPoint, reason: String)]
+    let confidence: Double
+}
+
+// MARK: -
 
 final class BallTrackingService {
     static let shared = BallTrackingService()
 
     private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
-    // Working resolution — 25% of source keeps it fast while a golf ball is still detectable
+    // Working resolution — 25 % of source; golf ball is still detectable at this scale
     private let workingScale: Float = 0.25
+
+    // Limb exclusion capsule radius in normalised frame units
+    private let limbRadius: Double = 0.055
+
+    // Address ball protection zone — never mask this close to the known ball position
+    private let addressProtectRadius: Double = 0.08
+
+    private(set) var debugLog: [BallTrackDebugFrame] = []
 
     private init() {}
 
@@ -20,53 +49,49 @@ final class BallTrackingService {
         contactFrameHint: Int?,
         onProgress: ((Double) -> Void)? = nil
     ) async -> [BallTrackPoint] {
+        debugLog.removeAll()
         guard frames.count > 3 else { return [] }
 
-        let totalFrames = frames.count
+        let impactIdx = contactFrameHint ?? frames[frames.count / 2].index
 
-        // Phase 1 — Find the stationary ball at address.
-        // The ball is still during setup; look for a consistent small white blob
-        // in the first third of frames.
+        // Pre-impact frames: use a window ending just before impact
+        let preFrames = frames.filter { $0.index < impactIdx }
+        let setupFrames: [VideoFrame] = {
+            let pool = preFrames.isEmpty ? Array(frames.prefix(frames.count / 3)) : preFrames
+            return Array(pool.suffix(min(pool.count, max(6, frames.count / 5))))
+        }()
+
         onProgress?(0.05)
-        let setupEnd = max(2, totalFrames / 3)
-        let setupFrames = Array(frames.prefix(setupEnd))
-        let bodyMask = buildBodyMask(from: poseFrames.prefix(setupEnd).map { $0 })
-        let staticBallPos = findStaticBall(in: setupFrames, bodyMask: bodyMask)
+        let staticBallPos = findStaticBall(in: setupFrames, poseFrames: poseFrames)
 
-        // Phase 2 — Track the ball post-impact.
-        // Start from the known address position and look for it moving away.
-        let contactIdx = contactFrameHint ?? (totalFrames / 2)
         onProgress?(0.2)
-
         var trackPoints: [BallTrackPoint] = []
 
         if let startPos = staticBallPos {
-            // Record the ball sitting still just before impact
-            let preContactFrames = frames.filter { $0.index < contactIdx }.suffix(3)
-            for f in preContactFrames {
+            // Anchor the last few pre-impact frames at the address position
+            for f in setupFrames.suffix(3) {
                 trackPoints.append(BallTrackPoint(
                     frameIndex: f.index,
                     timestamp: f.timestamp,
                     x: Float(startPos.x),
                     y: Float(startPos.y),
-                    confidence: 0.8
+                    confidence: 0.7
                 ))
             }
 
-            // Post-impact: follow the white ball as it moves away
-            let postFrames = frames.filter { $0.index >= contactIdx }
+            let postFrames = frames.filter { $0.index >= impactIdx }
             let postTrack = await trackPostImpact(
                 frames: postFrames,
                 startNorm: startPos,
-                bodyMask: bodyMask,
+                poseFrames: poseFrames,
+                addressBall: startPos,
                 onProgress: { p in onProgress?(0.2 + p * 0.75) }
             )
             trackPoints.append(contentsOf: postTrack)
         } else {
-            // Fallback — body-masked frame differencing across all frames
             let fallback = await maskedFrameDifference(
                 frames: frames,
-                bodyMask: bodyMask,
+                poseFrames: poseFrames,
                 onProgress: { p in onProgress?(p) }
             )
             trackPoints = fallback
@@ -78,84 +103,114 @@ final class BallTrackingService {
 
     // MARK: - Phase 1: Find stationary ball at address
 
-    private func findStaticBall(in frames: [VideoFrame], bodyMask: CGRect?) -> CGPoint? {
+    private func findStaticBall(in frames: [VideoFrame], poseFrames: [PoseFrame]) -> CGPoint? {
         var candidateSets: [[CGPoint]] = []
 
         for frame in frames {
-            guard let scaled = scaleImage(frame.image) else { continue }
-            let blobs = findWhiteBlobs(in: scaled, excludingMask: bodyMask)
-            if !blobs.isEmpty {
-                candidateSets.append(blobs.map(\.centroid))
+            guard let scaled = scaleImage(frame.image),
+                  let cg = ciContext.createCGImage(scaled, from: scaled.extent) else { continue }
+
+            let pose = closestPoseFrame(to: frame.index, in: poseFrames)
+            let mask = buildLimbMask(nearestPose: pose, width: cg.width, height: cg.height, addressBall: nil)
+            let candidates = findCandidates(in: cg, limbMask: mask, withinROI: nil)
+
+            if !candidates.isEmpty {
+                candidateSets.append(candidates.map(\.centroid))
             }
         }
 
         guard candidateSets.count >= 2 else { return nil }
-
-        // Find a position consistent across multiple frames — that's the stationary ball
         return mostConsistentPosition(candidateSets, maxSpread: 0.04)
     }
 
-    // MARK: - Phase 2: Track post-impact
+    // MARK: - Phase 2: ROI-based post-impact tracking
 
     private func trackPostImpact(
         frames: [VideoFrame],
         startNorm: CGPoint,
-        bodyMask: CGRect?,
+        poseFrames: [PoseFrame],
+        addressBall: CGPoint,
         onProgress: ((Double) -> Void)?
     ) async -> [BallTrackPoint] {
         var results: [BallTrackPoint] = []
         var currentPos = startNorm
-        var velocity = CGPoint(x: 0, y: -0.015) // golf ball typically rises initially
+        var velocity = CGPoint(x: 0, y: -0.015)
         var lostCount = 0
-        let maxLost = 4
+        let maxLost = 5
 
         for (idx, frame) in frames.enumerated() {
-            guard let scaled = scaleImage(frame.image) else { continue }
+            guard let scaled = scaleImage(frame.image),
+                  let cg = ciContext.createCGImage(scaled, from: scaled.extent) else { continue }
 
-            // Search radius grows as the ball accelerates away
-            let searchRadius = min(0.25, 0.05 + Double(idx) * 0.012)
-            let searchRect = CGRect(
-                x: currentPos.x - searchRadius,
-                y: currentPos.y - searchRadius,
+            // Search window grows as ball accelerates away from address
+            let searchRadius = min(0.32, 0.06 + Double(idx) * 0.010)
+            let predicted = CGPoint(x: currentPos.x + velocity.x, y: currentPos.y + velocity.y)
+            let roi = CGRect(
+                x: predicted.x - searchRadius,
+                y: predicted.y - searchRadius,
                 width: searchRadius * 2,
                 height: searchRadius * 2
             )
 
-            let blobs = findWhiteBlobs(in: scaled, excludingMask: bodyMask, withinROI: searchRect)
+            let pose = closestPoseFrame(to: frame.index, in: poseFrames)
+            let limbMask = buildLimbMask(nearestPose: pose, width: cg.width, height: cg.height, addressBall: addressBall)
+            let raw = findCandidates(in: cg, limbMask: limbMask, withinROI: roi)
+            let scored = scoreCandidates(raw, predicted: predicted, searchRadius: searchRadius, lastVelocity: velocity, lastPos: currentPos)
 
-            if let best = blobs.first {
-                let newPos = best.centroid
-                let newVelocity = CGPoint(x: newPos.x - currentPos.x, y: newPos.y - currentPos.y)
+            var rejections: [(CGPoint, String)] = []
+            var selected: BallCandidate? = nil
 
-                // Sanity check: velocity should be consistent direction (ball doesn't reverse)
+            for c in scored {
+                // Direction reversal check — ball shouldn't double-back
                 if idx > 0 {
-                    let dotProduct = velocity.x * newVelocity.x + velocity.y * newVelocity.y
-                    if dotProduct < -0.001 { // reversed direction — likely a false positive
-                        lostCount += 1
-                        currentPos = CGPoint(x: currentPos.x + velocity.x, y: currentPos.y + velocity.y)
-                        if lostCount > maxLost { break }
-                        continue
+                    let velMag = hypot(velocity.x, velocity.y)
+                    if velMag > 0.003 {
+                        let dv = CGPoint(x: c.centroid.x - currentPos.x, y: c.centroid.y - currentPos.y)
+                        let dot = velocity.x * dv.x + velocity.y * dv.y
+                        if dot < -0.001 {
+                            rejections.append((c.centroid, "velocity reversal"))
+                            continue
+                        }
                     }
                 }
+                selected = c
+                break
+            }
 
+            // Log unselected candidates as rejected (outside ROI already filtered by findCandidates)
+            let selectedCentroid = selected?.centroid
+            for c in scored where c.centroid != selectedCentroid {
+                if !rejections.contains(where: { $0.0 == c.centroid }) {
+                    rejections.append((c.centroid, "lower score"))
+                }
+            }
+
+            debugLog.append(BallTrackDebugFrame(
+                frameIndex: frame.index,
+                candidates: scored,
+                selectedCentroid: selectedCentroid,
+                rejections: rejections,
+                confidence: selected.map { Double($0.score) } ?? 0
+            ))
+
+            if let best = selected {
+                let newVel = CGPoint(x: best.centroid.x - currentPos.x, y: best.centroid.y - currentPos.y)
                 velocity = CGPoint(
-                    x: velocity.x * 0.4 + newVelocity.x * 0.6,
-                    y: velocity.y * 0.4 + newVelocity.y * 0.6
+                    x: velocity.x * 0.35 + newVel.x * 0.65,
+                    y: velocity.y * 0.35 + newVel.y * 0.65
                 )
-                currentPos = newPos
+                currentPos = best.centroid
                 lostCount = 0
-
                 results.append(BallTrackPoint(
                     frameIndex: frame.index,
                     timestamp: frame.timestamp,
-                    x: Float(newPos.x),
-                    y: Float(newPos.y),
-                    confidence: Float(min(0.9, best.confidence))
+                    x: Float(best.centroid.x),
+                    y: Float(best.centroid.y),
+                    confidence: Float(min(0.92, best.score))
                 ))
             } else {
                 lostCount += 1
-                // Extrapolate position using last known velocity
-                currentPos = CGPoint(x: currentPos.x + velocity.x, y: currentPos.y + velocity.y)
+                currentPos = predicted
                 if lostCount > maxLost { break }
             }
 
@@ -166,45 +221,55 @@ final class BallTrackingService {
         return results
     }
 
-    // MARK: - Fallback: body-masked frame differencing
+    // MARK: - Fallback: body-masked diff with direct connected-component tracking
 
     private func maskedFrameDifference(
         frames: [VideoFrame],
-        bodyMask: CGRect?,
+        poseFrames: [PoseFrame],
         onProgress: ((Double) -> Void)?
     ) async -> [BallTrackPoint] {
         var results: [BallTrackPoint] = []
-        var prev: CIImage? = nil
+        var prevScaled: CIImage? = nil
 
         for (idx, frame) in frames.enumerated() {
-            defer { prev = frame.image }
-            guard let previous = prev else { continue }
-
-            guard let scaledCurrent = scaleImage(frame.image),
-                  let scaledPrev = scaleImage(previous) else { continue }
+            guard let currentScaled = scaleImage(frame.image) else {
+                prevScaled = nil
+                continue
+            }
+            defer { prevScaled = currentScaled }
+            guard let prev = prevScaled else { continue }
 
             let diff = CIFilter.colorAbsoluteDifference()
-            diff.inputImage = scaledCurrent
-            diff.inputImage2 = scaledPrev
+            diff.inputImage = currentScaled
+            diff.inputImage2 = prev
             guard let diffImg = diff.outputImage else { continue }
 
             let thresh = CIFilter.colorThreshold()
             thresh.inputImage = diffImg
-            thresh.threshold = 0.10
+            thresh.threshold = 0.12
             guard let thresholded = thresh.outputImage else { continue }
 
             let extent = thresholded.extent
             guard !extent.isInfinite, extent.width > 0, extent.height > 0 else { continue }
-            guard let cg = ciContext.createCGImage(thresholded, from: extent) else { continue }
+            guard let diffCG = ciContext.createCGImage(thresholded, from: extent) else { continue }
 
-            let blobs = findWhiteBlobs(in: cg, in: extent, excludingMask: bodyMask, withinROI: nil)
-            if let b = blobs.first, b.size > 4, b.size < 800 {
+            let pose = closestPoseFrame(to: frame.index, in: poseFrames)
+            let limbMask = buildLimbMask(nearestPose: pose, width: diffCG.width, height: diffCG.height, addressBall: nil)
+
+            if let blob = largestComponentInDiff(cg: diffCG, limbMask: limbMask) {
                 results.append(BallTrackPoint(
                     frameIndex: frame.index,
                     timestamp: frame.timestamp,
-                    x: Float(b.centroid.x),
-                    y: Float(b.centroid.y),
-                    confidence: Float(min(0.5, b.confidence))
+                    x: Float(blob.centroid.x),
+                    y: Float(blob.centroid.y),
+                    confidence: Float(min(0.45, blob.score))
+                ))
+                debugLog.append(BallTrackDebugFrame(
+                    frameIndex: frame.index,
+                    candidates: [blob],
+                    selectedCentroid: blob.centroid,
+                    rejections: [],
+                    confidence: min(0.45, blob.score)
                 ))
             }
 
@@ -215,83 +280,69 @@ final class BallTrackingService {
         return results
     }
 
-    // MARK: - White blob detection
+    // MARK: - Candidate detection with circularity scoring
 
-    private struct BlobResult {
-        let centroid: CGPoint   // normalised [0,1]
-        let size: Int           // pixel count
-        let confidence: Double
-    }
-
-    private func findWhiteBlobs(
-        in ciImage: CIImage,
-        excludingMask: CGRect?,
-        withinROI: CGRect? = nil
-    ) -> [BlobResult] {
-        guard let cg = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return [] }
-        return findWhiteBlobs(in: cg, in: ciImage.extent, excludingMask: excludingMask, withinROI: withinROI)
-    }
-
-    private func findWhiteBlobs(
+    private func findCandidates(
         in cg: CGImage,
-        in extent: CGRect,
-        excludingMask: CGRect?,
+        limbMask: [Bool],
         withinROI: CGRect?
-    ) -> [BlobResult] {
-        let w = cg.width
-        let h = cg.height
+    ) -> [BallCandidate] {
+        let w = cg.width, h = cg.height
         guard let data = cg.dataProvider?.data, let ptr = CFDataGetBytePtr(data) else { return [] }
-
         let bpp = max(1, cg.bitsPerPixel / 8)
         let bpr = cg.bytesPerRow
         let dataLen = CFDataGetLength(data)
 
-        // Build a boolean map of "bright white" pixels
+        // Build bright-pixel map: high luminance, colour-balanced (white)
         var bright = [Bool](repeating: false, count: w * h)
 
         for py in 0..<h {
             for px in 0..<w {
+                guard !limbMask[py * w + px] else { continue }
                 let offset = py * bpr + px * bpp
                 guard offset + 2 < dataLen else { continue }
 
                 let r = Double(ptr[offset])
                 let g = Double(ptr[offset + 1])
                 let b = Double(ptr[offset + 2])
-
-                // A golf ball is white: all channels high, relatively balanced
-                let brightness = (r + g + b) / 765.0
+                let lum = (r + g + b) / 765.0
                 let balanced = abs(r - g) < 40 && abs(g - b) < 40 && abs(r - b) < 40
-                if brightness > 0.80 && balanced {
-                    // Normalised coords for mask checks
+
+                if lum > 0.78 && balanced {
                     let nx = Double(px) / Double(w)
                     let ny = 1.0 - Double(py) / Double(h)
-
-                    if let mask = excludingMask, mask.contains(CGPoint(x: nx, y: ny)) { continue }
                     if let roi = withinROI, !roi.contains(CGPoint(x: nx, y: ny)) { continue }
-
                     bright[py * w + px] = true
                 }
             }
         }
 
-        // Simple flood-fill to find connected components
+        // Flood-fill BFS to find connected components
         var visited = [Bool](repeating: false, count: w * h)
-        var blobs: [BlobResult] = []
+        var candidates: [BallCandidate] = []
 
         for startY in 0..<h {
             for startX in 0..<w {
-                let idx = startY * w + startX
-                guard bright[idx], !visited[idx] else { continue }
+                let startIdx = startY * w + startX
+                guard bright[startIdx], !visited[startIdx] else { continue }
 
-                // BFS
                 var queue = [(startX, startY)]
                 var pixels: [(Int, Int)] = []
-                visited[idx] = true
-
+                var brightSum = 0.0
+                visited[startIdx] = true
                 var qi = 0
+
                 while qi < queue.count {
                     let (cx, cy) = queue[qi]; qi += 1
                     pixels.append((cx, cy))
+
+                    let off = cy * bpr + cx * bpp
+                    if off + 2 < dataLen {
+                        let r = Double(ptr[off])
+                        let g = Double(ptr[off + 1])
+                        let b = Double(ptr[off + 2])
+                        brightSum += (r + g + b) / 765.0
+                    }
 
                     for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)] {
                         let nx2 = cx + dx, ny2 = cy + dy
@@ -303,70 +354,273 @@ final class BallTrackingService {
                     }
                 }
 
-                // Filter: golf ball should be small but not a single pixel
                 guard pixels.count >= 3, pixels.count <= 2000 else { continue }
 
+                // Centroid
                 let sumX = pixels.reduce(0.0) { $0 + Double($1.0) }
                 let sumY = pixels.reduce(0.0) { $0 + Double($1.1) }
-                let cx = sumX / Double(pixels.count)
-                let cy = sumY / Double(pixels.count)
+                let cxF = sumX / Double(pixels.count)
+                let cyF = sumY / Double(pixels.count)
 
-                let normX = cx / Double(w)
-                let normY = 1.0 - cy / Double(h)
-                let confidence = min(1.0, Double(pixels.count) / 80.0)
+                // Circularity: count boundary edges (pixels adjacent to non-blob or image border)
+                var perimeter = 0
+                for (px2, py2) in pixels {
+                    for (ddx, ddy) in [(-1,0),(1,0),(0,-1),(0,1)] {
+                        let nx2 = px2 + ddx, ny2 = py2 + ddy
+                        if nx2 < 0 || nx2 >= w || ny2 < 0 || ny2 >= h || !bright[ny2 * w + nx2] {
+                            perimeter += 1
+                        }
+                    }
+                }
+                let area = Double(pixels.count)
+                let circularity = perimeter > 0
+                    ? min(1.0, (4 * Double.pi * area) / Double(perimeter * perimeter))
+                    : 0
 
-                blobs.append(BlobResult(
+                let avgBrightness = brightSum / area
+                let normX = cxF / Double(w)
+                let normY = 1.0 - cyF / Double(h)
+
+                // Base score: prefer ~40-pixel blobs, round, bright
+                let sizeScore  = exp(-abs(area - 40) / 35)
+                let baseScore  = sizeScore * (0.40 + 0.40 * circularity + 0.20 * avgBrightness)
+
+                candidates.append(BallCandidate(
                     centroid: CGPoint(x: normX, y: normY),
                     size: pixels.count,
-                    confidence: confidence
+                    brightness: avgBrightness,
+                    circularity: circularity,
+                    score: baseScore
                 ))
             }
         }
 
-        // Sort: prefer compact mid-size blobs (most ball-like)
-        return blobs.sorted { abs($0.size - 40) < abs($1.size - 40) }
+        return candidates.sorted { $0.score > $1.score }
     }
 
-    // MARK: - Body mask
+    // MARK: - Candidate scoring (adds distance-from-prediction + temporal continuity)
 
-    private func buildBodyMask(from poseFrames: [PoseFrame]) -> CGRect? {
-        var allX: [Float] = []
-        var allY: [Float] = []
+    private func scoreCandidates(
+        _ candidates: [BallCandidate],
+        predicted: CGPoint,
+        searchRadius: Double,
+        lastVelocity: CGPoint,
+        lastPos: CGPoint
+    ) -> [BallCandidate] {
+        return candidates.map { c in
+            let dist = hypot(c.centroid.x - predicted.x, c.centroid.y - predicted.y)
+            let distScore = exp(-dist / max(0.01, searchRadius * 0.5))
 
-        for frame in poseFrames {
-            for lm in frame.landmarks where lm.confidence > 0.3 {
-                allX.append(lm.x)
-                allY.append(lm.y)
+            let velMag = hypot(lastVelocity.x, lastVelocity.y)
+            var continuityScore = 1.0
+            if velMag > 0.002 {
+                let dx = c.centroid.x - lastPos.x
+                let dy = c.centroid.y - lastPos.y
+                let moveMag = hypot(dx, dy)
+                if moveMag > 0.001 {
+                    let cosAngle = (dx * lastVelocity.x + dy * lastVelocity.y) / (moveMag * velMag)
+                    continuityScore = max(0, cosAngle * 0.5 + 0.5)
+                }
+            }
+
+            let combined = c.score * 0.45 + distScore * 0.35 + continuityScore * 0.20
+            return BallCandidate(
+                centroid: c.centroid,
+                size: c.size,
+                brightness: c.brightness,
+                circularity: c.circularity,
+                score: combined
+            )
+        }.sorted { $0.score > $1.score }
+    }
+
+    // MARK: - Fallback: pick best connected component from diff directly
+
+    private func largestComponentInDiff(cg: CGImage, limbMask: [Bool]) -> BallCandidate? {
+        let w = cg.width, h = cg.height
+        guard let data = cg.dataProvider?.data, let ptr = CFDataGetBytePtr(data) else { return nil }
+        let bpp = max(1, cg.bitsPerPixel / 8)
+        let bpr = cg.bytesPerRow
+        let dataLen = CFDataGetLength(data)
+
+        // Any pixel bright after threshold = motion pixel
+        var active = [Bool](repeating: false, count: w * h)
+        for py in 0..<h {
+            for px in 0..<w {
+                guard !limbMask[py * w + px] else { continue }
+                let offset = py * bpr + px * bpp
+                guard offset < dataLen else { continue }
+                if ptr[offset] > 180 { active[py * w + px] = true }
             }
         }
 
-        guard !allX.isEmpty else { return nil }
+        var visited = [Bool](repeating: false, count: w * h)
+        var best: BallCandidate? = nil
+        var bestScore = 0.0
 
-        let pad: Float = 0.08
-        let minX = max(0, (allX.min() ?? 0) - pad)
-        let maxX = min(1, (allX.max() ?? 1) + pad)
-        let minY = max(0, (allY.min() ?? 0) - pad)
-        let maxY = min(1, (allY.max() ?? 1) + pad)
+        for startY in 0..<h {
+            for startX in 0..<w {
+                let startIdx = startY * w + startX
+                guard active[startIdx], !visited[startIdx] else { continue }
 
-        return CGRect(x: Double(minX), y: Double(minY),
-                      width: Double(maxX - minX), height: Double(maxY - minY))
+                var queue = [(startX, startY)]
+                var pixels: [(Int, Int)] = []
+                visited[startIdx] = true
+                var qi = 0
+
+                while qi < queue.count {
+                    let (cx, cy) = queue[qi]; qi += 1
+                    pixels.append((cx, cy))
+                    for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)] {
+                        let nx2 = cx + dx, ny2 = cy + dy
+                        guard nx2 >= 0, nx2 < w, ny2 >= 0, ny2 < h else { continue }
+                        let ni = ny2 * w + nx2
+                        guard active[ni], !visited[ni] else { continue }
+                        visited[ni] = true
+                        queue.append((nx2, ny2))
+                    }
+                }
+
+                guard pixels.count >= 3, pixels.count <= 1500 else { continue }
+
+                let sumX = pixels.reduce(0.0) { $0 + Double($1.0) }
+                let sumY = pixels.reduce(0.0) { $0 + Double($1.1) }
+                let cxF = sumX / Double(pixels.count)
+                let cyF = sumY / Double(pixels.count)
+
+                var perimeter = 0
+                for (px2, py2) in pixels {
+                    for (ddx, ddy) in [(-1,0),(1,0),(0,-1),(0,1)] {
+                        let nx2 = px2 + ddx, ny2 = py2 + ddy
+                        if nx2 < 0 || nx2 >= w || ny2 < 0 || ny2 >= h || !active[ny2 * w + nx2] {
+                            perimeter += 1
+                        }
+                    }
+                }
+                let area = Double(pixels.count)
+                let circularity = perimeter > 0
+                    ? min(1.0, (4 * Double.pi * area) / Double(perimeter * perimeter))
+                    : 0
+                let sizeScore = exp(-abs(area - 40) / 30)
+                let score = sizeScore * (0.5 + 0.5 * circularity)
+
+                if score > bestScore {
+                    bestScore = score
+                    best = BallCandidate(
+                        centroid: CGPoint(x: cxF / Double(w), y: 1.0 - cyF / Double(h)),
+                        size: pixels.count,
+                        brightness: 0.8,
+                        circularity: circularity,
+                        score: score
+                    )
+                }
+            }
+        }
+
+        return best
+    }
+
+    // MARK: - Limb-segment mask (avoids one big bounding box)
+
+    private struct Segment {
+        let p1: CGPoint
+        let p2: CGPoint
+    }
+
+    private func buildLimbMask(
+        nearestPose: PoseFrame?,
+        width: Int,
+        height: Int,
+        addressBall: CGPoint?
+    ) -> [Bool] {
+        var mask = [Bool](repeating: false, count: width * height)
+        guard let pose = nearestPose else { return mask }
+
+        func lm(_ j: VNHumanBodyPoseObservation.JointName) -> PoseLandmark? {
+            pose.landmark(named: j.rawValue.rawValue)
+        }
+
+        let jointPairs: [(VNHumanBodyPoseObservation.JointName, VNHumanBodyPoseObservation.JointName)] = [
+            (.neck, .leftShoulder),   (.neck, .rightShoulder),
+            (.leftShoulder, .leftElbow),  (.leftElbow, .leftWrist),
+            (.rightShoulder, .rightElbow), (.rightElbow, .rightWrist),
+            (.leftShoulder, .leftHip),    (.rightShoulder, .rightHip),
+            (.leftHip, .leftKnee),        (.leftKnee, .leftAnkle),
+            (.rightHip, .rightKnee),      (.rightKnee, .rightAnkle),
+            (.leftHip, .rightHip)
+        ]
+
+        var segments: [Segment] = []
+        for (j1, j2) in jointPairs {
+            guard let a = lm(j1), let b = lm(j2),
+                  a.confidence > 0.3, b.confidence > 0.3 else { continue }
+            segments.append(Segment(
+                p1: CGPoint(x: Double(a.x), y: Double(a.y)),
+                p2: CGPoint(x: Double(b.x), y: Double(b.y))
+            ))
+        }
+
+        for seg in segments {
+            // Bounding box for this limb segment with padding
+            let pad = limbRadius * 1.5
+            let minNX = min(seg.p1.x, seg.p2.x) - pad
+            let maxNX = max(seg.p1.x, seg.p2.x) + pad
+            let minNY = min(seg.p1.y, seg.p2.y) - pad
+            let maxNY = max(seg.p1.y, seg.p2.y) + pad
+
+            // Image pixel coords: y is flipped (ny=0 is bottom, py=0 is top)
+            let minPX = max(0, Int(minNX * Double(width)))
+            let maxPX = min(width - 1, Int(maxNX * Double(width)))
+            let minPY = max(0, Int((1.0 - maxNY) * Double(height)))
+            let maxPY = min(height - 1, Int((1.0 - minNY) * Double(height)))
+            guard minPX <= maxPX, minPY <= maxPY else { continue }
+
+            for py in minPY...maxPY {
+                for px in minPX...maxPX {
+                    let nx = Double(px) / Double(width)
+                    let ny = 1.0 - Double(py) / Double(height)
+
+                    // Never mask the address ball area
+                    if let ab = addressBall,
+                       hypot(nx - ab.x, ny - ab.y) < addressProtectRadius { continue }
+
+                    if distToSegment(CGPoint(x: nx, y: ny), seg: seg) < limbRadius {
+                        mask[py * width + px] = true
+                    }
+                }
+            }
+        }
+
+        return mask
+    }
+
+    private func distToSegment(_ point: CGPoint, seg: Segment) -> Double {
+        let dx = seg.p2.x - seg.p1.x
+        let dy = seg.p2.y - seg.p1.y
+        let lenSq = dx * dx + dy * dy
+        guard lenSq > 1e-12 else {
+            return hypot(point.x - seg.p1.x, point.y - seg.p1.y)
+        }
+        let t = max(0, min(1, ((point.x - seg.p1.x) * dx + (point.y - seg.p1.y) * dy) / lenSq))
+        return hypot(point.x - (seg.p1.x + t * dx), point.y - (seg.p1.y + t * dy))
     }
 
     // MARK: - Helpers
 
+    private func closestPoseFrame(to frameIndex: Int, in poseFrames: [PoseFrame]) -> PoseFrame? {
+        poseFrames.min(by: { abs($0.frameIndex - frameIndex) < abs($1.frameIndex - frameIndex) })
+    }
+
     private func scaleImage(_ image: CIImage) -> CIImage? {
-        let scaleFilter = CIFilter.lanczosScaleTransform()
-        scaleFilter.inputImage = image
-        scaleFilter.scale = workingScale
-        scaleFilter.aspectRatio = 1.0
-        return scaleFilter.outputImage
+        let f = CIFilter.lanczosScaleTransform()
+        f.inputImage = image
+        f.scale = workingScale
+        f.aspectRatio = 1.0
+        return f.outputImage
     }
 
     private func mostConsistentPosition(_ sets: [[CGPoint]], maxSpread: Double) -> CGPoint? {
-        guard !sets.isEmpty else { return nil }
-        // For each candidate in the first set, check how many other sets have a point nearby
         guard let first = sets.first else { return nil }
-
         var bestScore = 0
         var bestPos = CGPoint.zero
 
@@ -375,8 +629,8 @@ final class BallTrackingService {
             var sumX = candidate.x
             var sumY = candidate.y
 
-            for otherSet in sets.dropFirst() {
-                if let nearby = otherSet.first(where: {
+            for other in sets.dropFirst() {
+                if let nearby = other.first(where: {
                     hypot($0.x - candidate.x, $0.y - candidate.y) < maxSpread
                 }) {
                     score += 1
@@ -416,10 +670,7 @@ final class BallTrackingService {
             let prev = filtered.last!
             let curr = points[i]
             let dist = hypot(Double(curr.x - prev.x), Double(curr.y - prev.y))
-            // Reject if ball teleports more than 30% of frame width between samples
-            if dist < 0.30 {
-                filtered.append(curr)
-            }
+            if dist < 0.30 { filtered.append(curr) }
         }
         return filtered
     }

@@ -36,21 +36,37 @@ final class AnalysisPipeline: ObservableObject {
                 Task { @MainActor in self?.progress = .extractingFrames(p) }
             }
 
-            // Phase 2: Detect pose
+            // Phase 2: Detect pose on sparse frames
             progress = .detectingPose(0)
             let poseFrames = try await PoseDetectionService.shared.detectPoses(in: frames) { [weak self] p in
                 Task { @MainActor in self?.progress = .detectingPose(p) }
             }
 
-            // Phase 3: Track ball
+            // Phase 3: Track ball — pre-estimate impact from pose, then extract dense frames
             progress = .trackingBall(0)
-            let contactHint = session.effectiveContactFrameIndex
-            let ballTrackPoints = await BallTrackingService.shared.trackBall(
-                in: frames,
-                poseFrames: poseFrames,
-                contactFrameHint: contactHint
+
+            // Use session manual override if available; otherwise estimate from pose alone
+            let poseImpact = ContactDetectionService.shared.estimateImpactFromPoseOnly(poseFrames: poseFrames)
+            let impactFrameIdx = session.effectiveContactFrameIndex ?? poseImpact.frameIndex
+            let impactTime: TimeInterval = poseFrames.first(where: { $0.frameIndex == impactFrameIdx })
+                .map(\.timestamp) ?? (Double(impactFrameIdx) / extractor.frameRate)
+
+            // Extract dense frames (up to 60 fps) around the estimated impact window
+            let denseFrames = (try? await extractor.extractDenseFrames(
+                around: impactTime,
+                windowSeconds: 3.5,
+                maxFPS: min(extractor.frameRate, 60)
             ) { [weak self] p in
-                Task { @MainActor in self?.progress = .trackingBall(p) }
+                Task { @MainActor in self?.progress = .trackingBall(p * 0.3) }
+            }) ?? []
+            let trackingFrames = denseFrames.isEmpty ? frames : denseFrames
+
+            let ballTrackPoints = await BallTrackingService.shared.trackBall(
+                in: trackingFrames,
+                poseFrames: poseFrames,
+                contactFrameHint: impactFrameIdx
+            ) { [weak self] p in
+                Task { @MainActor in self?.progress = .trackingBall(0.3 + p * 0.7) }
             }
 
             // Phase 4: Detect contact

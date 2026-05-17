@@ -5,6 +5,16 @@ final class ContactDetectionService {
 
     private init() {}
 
+    // MARK: - Pre-tracking pose-only estimate (call before ball tracking)
+
+    func estimateImpactFromPoseOnly(poseFrames: [PoseFrame]) -> (frameIndex: Int, confidence: Float) {
+        if let r = detectImpactFromWristAcceleration(poseFrames: poseFrames) { return r }
+        return estimateImpactFromSwingPhase(
+            poseFrames: poseFrames,
+            totalFrames: poseFrames.last?.frameIndex ?? 100
+        )
+    }
+
     // MARK: - Golf
 
     func detectGolfImpact(
