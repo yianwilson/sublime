@@ -5,9 +5,9 @@ struct AnalysisProgressScreen: View {
     let session: PracticeSession
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var pipeline = AnalysisPipeline()
     @State private var didStart = false
-    @State private var isDone = false
     @State private var failureMessage: String?
 
     var body: some View {
@@ -45,15 +45,14 @@ struct AnalysisProgressScreen: View {
             case .done(let result):
                 session.analysisResult = result
                 try? modelContext.save()
-                isDone = true
+                // Dismiss back to AnalysisResultScreen — it holds the same session
+                // reference and will reflect the updated analysisResult immediately.
+                dismiss()
             case .failed(let msg):
                 failureMessage = msg
             default:
                 break
             }
-        }
-        .navigationDestination(isPresented: $isDone) {
-            AnalysisResultScreen(session: session)
         }
     }
 
