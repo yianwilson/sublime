@@ -35,7 +35,7 @@ struct SettingsScreen: View {
             }
 
             Section("Limitations") {
-                limitationRow("Ball speed not measured", "2D image-space tracking only")
+                limitationRow("Ball speed estimated", "Image-space launch estimate, not launch monitor speed")
                 limitationRow("No carry distance", "GPS or launch monitor required")
                 limitationRow("No spin rate", "Requires specialist hardware")
                 limitationRow("Approximate metrics", "All values include confidence scores")

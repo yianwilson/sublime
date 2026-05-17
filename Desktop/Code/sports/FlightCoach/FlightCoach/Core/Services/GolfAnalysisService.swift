@@ -5,6 +5,14 @@ final class GolfAnalysisService {
 
     private init() {}
 
+    private struct BallTrackQuality {
+        let usablePoints: [BallTrackPoint]
+        let confidence: Float
+        let reason: String
+        let isUsableForShotShape: Bool
+        let isUsableForSpeed: Bool
+    }
+
     func analyse(
         poseFrames: [PoseFrame],
         ballTrackPoints: [BallTrackPoint],
@@ -12,11 +20,18 @@ final class GolfAnalysisService {
         contactConfidence: Float,
         cameraAngle: CameraAngle
     ) -> GolfAnalysisResult {
-        let shotShape = estimateShotShape(ballTrackPoints: ballTrackPoints, cameraAngle: cameraAngle)
-        let metrics = computeMetrics(poseFrames: poseFrames, contactFrameIndex: contactFrameIndex, ballTrackPoints: ballTrackPoints)
+        let trackQuality = evaluateBallTrack(ballTrackPoints)
+        let shotShape = estimateShotShape(ballTrackPoints: ballTrackPoints, cameraAngle: cameraAngle, trackQuality: trackQuality)
+        let metrics = computeMetrics(
+            poseFrames: poseFrames,
+            contactFrameIndex: contactFrameIndex,
+            ballTrackPoints: ballTrackPoints,
+            trackQuality: trackQuality
+        )
         let feedback = FeedbackEngine.shared.golfFeedback(
             metrics: metrics,
             shotShape: shotShape.shape,
+            shotShapeConfidence: shotShape.confidence,
             cameraAngle: cameraAngle,
             contactConfidence: contactConfidence
         )
@@ -33,23 +48,35 @@ final class GolfAnalysisService {
         )
     }
 
-    private func estimateShotShape(ballTrackPoints: [BallTrackPoint], cameraAngle: CameraAngle) -> (shape: ShotShape, confidence: Float) {
+    private func estimateShotShape(ballTrackPoints: [BallTrackPoint], cameraAngle: CameraAngle, trackQuality: BallTrackQuality) -> (shape: ShotShape, confidence: Float) {
         guard cameraAngle == .behindBallFlight, ballTrackPoints.count >= 4 else {
             return (.unknown, 0.15)
         }
+        guard trackQuality.isUsableForShotShape else {
+            return (.unknown, min(0.25, trackQuality.confidence))
+        }
 
-        let sorted = ballTrackPoints.sorted { $0.frameIndex < $1.frameIndex }
-        let first = sorted[0]
-        let last = sorted[sorted.count - 1]
+        let sorted = trackQuality.usablePoints
+        guard let first = sorted.first, let last = sorted.last else {
+            return (.unknown, 0.15)
+        }
 
         let totalDX = last.x - first.x
         let mid = sorted[sorted.count / 2]
         let midDeviation = mid.x - (first.x + last.x) / 2.0
+        let totalDY = last.y - first.y
+        let pathLength = pathLength(sorted)
+        let displacement = hypot(Double(totalDX), Double(totalDY))
+        let curvatureRatio = displacement > 0 ? abs(Double(midDeviation)) / displacement : 0
 
-        let confidence = Float(min(0.7, Double(ballTrackPoints.count) / 15.0))
+        guard pathLength > 0.08, displacement > 0.06 else {
+            return (.unknown, min(0.25, trackQuality.confidence))
+        }
 
-        if abs(midDeviation) < 0.02 {
-            return (.straight, confidence)
+        let confidence = min(0.75, max(0.2, trackQuality.confidence * Float(min(1.0, curvatureRatio * 8.0))))
+
+        if abs(midDeviation) < 0.025 || curvatureRatio < 0.08 {
+            return (.straight, max(0.25, trackQuality.confidence * 0.55))
         } else if midDeviation > 0 {
             return totalDX > 0 ? (.fadeOrSlice, confidence) : (.drawOrHook, confidence)
         } else {
@@ -60,10 +87,14 @@ final class GolfAnalysisService {
     private func computeMetrics(
         poseFrames: [PoseFrame],
         contactFrameIndex: Int,
-        ballTrackPoints: [BallTrackPoint]
+        ballTrackPoints: [BallTrackPoint],
+        trackQuality: BallTrackQuality
     ) -> [AnalysisMetric] {
         var metrics: [AnalysisMetric] = []
 
+        if let speed = estimateBallSpeed(ballTrackPoints: ballTrackPoints, trackQuality: trackQuality) {
+            metrics.append(speed)
+        }
         if let tempo = computeTempoRatio(poseFrames: poseFrames, contactFrameIndex: contactFrameIndex) {
             metrics.append(tempo)
         }
@@ -81,6 +112,101 @@ final class GolfAnalysisService {
         }
 
         return metrics
+    }
+
+    private func evaluateBallTrack(_ points: [BallTrackPoint]) -> BallTrackQuality {
+        let sorted = points
+            .filter { $0.confidence >= 0.15 }
+            .sorted { $0.frameIndex < $1.frameIndex }
+
+        guard sorted.count >= 2 else {
+            return BallTrackQuality(usablePoints: sorted, confidence: 0.15, reason: "too-few-points", isUsableForShotShape: false, isUsableForSpeed: false)
+        }
+
+        let totalPath = pathLength(sorted)
+        guard let first = sorted.first, let last = sorted.last else {
+            return BallTrackQuality(usablePoints: sorted, confidence: 0.15, reason: "empty-track", isUsableForShotShape: false, isUsableForSpeed: false)
+        }
+
+        let displacement = hypot(Double(last.x - first.x), Double(last.y - first.y))
+        let avgConfidence = sorted.map(\.confidence).reduce(0, +) / Float(sorted.count)
+        let jumpPenalty = largeJumpRatio(sorted)
+        let straightness = displacement / max(totalPath, 0.0001)
+        let pointScore = min(1.0, Float(sorted.count) / 8.0)
+        let travelScore = min(1.0, Float(displacement / 0.18))
+        let confidence = max(0.10, min(0.9, avgConfidence * 0.50 + pointScore * 0.22 + travelScore * 0.23 - Float(jumpPenalty) * 0.30))
+
+        let usableForSpeed = sorted.count >= 2 && displacement > 0.012 && jumpPenalty < 0.60
+        let usableForShape = sorted.count >= 6 && displacement > 0.08 && totalPath > 0.1 && jumpPenalty < 0.3 && straightness > 0.55
+
+        return BallTrackQuality(
+            usablePoints: sorted,
+            confidence: confidence,
+            reason: usableForShape ? "tracked" : "weak-track",
+            isUsableForShotShape: usableForShape,
+            isUsableForSpeed: usableForSpeed
+        )
+    }
+
+    private func estimateBallSpeed(ballTrackPoints: [BallTrackPoint], trackQuality: BallTrackQuality) -> AnalysisMetric? {
+        let points = trackQuality.usablePoints
+        guard trackQuality.isUsableForSpeed, points.count >= 2 else {
+            return AnalysisMetric(
+                name: "Ball Speed",
+                value: 0,
+                unit: "mph",
+                confidence: min(0.25, trackQuality.confidence),
+                displayValue: "Unknown"
+            )
+        }
+
+        var speeds: [Double] = []
+        for pair in zip(points, points.dropFirst()) {
+            let a = pair.0
+            let b = pair.1
+            let dt = max(1.0 / 240.0, b.timestamp - a.timestamp)
+            let dist = hypot(Double(b.x - a.x), Double(b.y - a.y))
+            guard dist > 0.004 else { continue }
+            speeds.append(dist / dt)
+        }
+
+        guard !speeds.isEmpty else {
+            return AnalysisMetric(name: "Ball Speed", value: 0, unit: "mph", confidence: 0.2, displayValue: "Unknown")
+        }
+
+        let launchSpeed = speeds.prefix(4).max() ?? speeds.max() ?? 0
+        let estimatedMPH = max(20, min(210, launchSpeed * 42.0))
+        let confidence = min(0.65, max(0.18, trackQuality.confidence * 0.80))
+
+        return AnalysisMetric(
+            name: "Ball Speed",
+            value: estimatedMPH,
+            unit: "mph",
+            confidence: confidence,
+            displayValue: String(format: "~%.0f mph", estimatedMPH)
+        )
+    }
+
+    private func pathLength(_ points: [BallTrackPoint]) -> Double {
+        zip(points, points.dropFirst()).reduce(0.0) { total, pair in
+            total + hypot(Double(pair.1.x - pair.0.x), Double(pair.1.y - pair.0.y))
+        }
+    }
+
+    private func largeJumpRatio(_ points: [BallTrackPoint]) -> Double {
+        guard points.count > 1 else { return 1 }
+        var jumps = 0
+        var total = 0
+        for pair in zip(points, points.dropFirst()) {
+            let dt = max(1.0 / 240.0, pair.1.timestamp - pair.0.timestamp)
+            let dist = hypot(Double(pair.1.x - pair.0.x), Double(pair.1.y - pair.0.y))
+            let allowed = max(0.12, min(0.42, 18.0 * dt))
+            if dist > allowed * 0.75 {
+                jumps += 1
+            }
+            total += 1
+        }
+        return Double(jumps) / Double(max(1, total))
     }
 
     private func computeTempoRatio(poseFrames: [PoseFrame], contactFrameIndex: Int) -> AnalysisMetric? {

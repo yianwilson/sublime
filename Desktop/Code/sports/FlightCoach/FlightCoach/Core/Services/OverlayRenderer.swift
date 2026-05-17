@@ -69,24 +69,26 @@ struct PoseOverlayView: View {
 struct BallTrailOverlayView: View {
     let trackPoints: [BallTrackPoint]
     let highlightFrameIndex: Int?
+    let videoAspectRatio: CGFloat?
 
     var body: some View {
         GeometryReader { geo in
             Canvas { context, size in
                 guard trackPoints.count > 1 else { return }
+                let videoRect = fittedVideoRect(in: CGRect(origin: .zero, size: size))
 
                 var path = Path()
                 let sorted = trackPoints.sorted { $0.frameIndex < $1.frameIndex }
 
                 for (i, point) in sorted.enumerated() {
-                    let pt = CGPoint(x: CGFloat(point.x) * size.width, y: (1.0 - CGFloat(point.y)) * size.height)
+                    let pt = pointToView(point, in: videoRect)
                     if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
                 }
 
                 context.stroke(path, with: .color(.orange.opacity(0.8)), lineWidth: 2)
 
                 for point in sorted {
-                    let pt = CGPoint(x: CGFloat(point.x) * size.width, y: (1.0 - CGFloat(point.y)) * size.height)
+                    let pt = pointToView(point, in: videoRect)
                     let isContact = point.frameIndex == highlightFrameIndex
                     let radius: CGFloat = isContact ? 8 : 4
                     let color: Color = isContact ? .red : .orange
@@ -95,6 +97,40 @@ struct BallTrailOverlayView: View {
                 }
             }
         }
+    }
+
+    private func fittedVideoRect(in bounds: CGRect) -> CGRect {
+        guard let videoAspectRatio, videoAspectRatio > 0, bounds.width > 0, bounds.height > 0 else {
+            return bounds
+        }
+
+        let containerAspect = bounds.width / bounds.height
+        if containerAspect > videoAspectRatio {
+            let width = bounds.height * videoAspectRatio
+            return CGRect(
+                x: bounds.midX - width / 2,
+                y: bounds.minY,
+                width: width,
+                height: bounds.height
+            )
+        } else {
+            let height = bounds.width / videoAspectRatio
+            return CGRect(
+                x: bounds.minX,
+                y: bounds.midY - height / 2,
+                width: bounds.width,
+                height: height
+            )
+        }
+    }
+
+    private func pointToView(_ point: BallTrackPoint, in rect: CGRect) -> CGPoint {
+        let x = min(max(CGFloat(point.x), 0), 1)
+        let y = min(max(CGFloat(point.y), 0), 1)
+        return CGPoint(
+            x: rect.minX + x * rect.width,
+            y: rect.minY + (1.0 - y) * rect.height
+        )
     }
 }
 

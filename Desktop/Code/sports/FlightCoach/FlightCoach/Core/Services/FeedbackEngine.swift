@@ -10,6 +10,7 @@ final class FeedbackEngine {
     func golfFeedback(
         metrics: [AnalysisMetric],
         shotShape: ShotShape,
+        shotShapeConfidence: Float,
         cameraAngle: CameraAngle,
         contactConfidence: Float
     ) -> [FeedbackItem] {
@@ -29,7 +30,8 @@ final class FeedbackEngine {
         items += spineAngleFeedback(metrics: metrics)
         items += hipSwayFeedback(metrics: metrics)
         items += balanceFeedback(metrics: metrics)
-        items += shotShapeFeedback(shape: shotShape, cameraAngle: cameraAngle)
+        items += ballSpeedFeedback(metrics: metrics)
+        items += shotShapeFeedback(shape: shotShape, confidence: shotShapeConfidence, cameraAngle: cameraAngle)
 
         return items
     }
@@ -94,18 +96,30 @@ final class FeedbackEngine {
         }
     }
 
-    private func shotShapeFeedback(shape: ShotShape, cameraAngle: CameraAngle) -> [FeedbackItem] {
+    private func ballSpeedFeedback(metrics: [AnalysisMetric]) -> [FeedbackItem] {
+        guard let metric = metrics.first(where: { $0.name == "Ball Speed" }) else { return [] }
+        guard metric.displayValue != "Unknown" else {
+            return [FeedbackItem(title: "Ball Speed Unknown", detail: "Ball speed needs a stable launch track. The current trail is too weak or ambiguous to estimate speed.", severity: .info, confidence: metric.confidence, metricName: "Ball Speed")]
+        }
+        let qualifier = metric.isLowConfidence ? "rough estimate" : "estimate"
+        return [FeedbackItem(title: "Ball Speed", detail: "\(metric.displayValue) \(qualifier) from image-space launch movement. Use a launch monitor for measured speed.", severity: .info, confidence: metric.confidence, metricName: "Ball Speed")]
+    }
+
+    private func shotShapeFeedback(shape: ShotShape, confidence: Float, cameraAngle: CameraAngle) -> [FeedbackItem] {
         if cameraAngle != .behindBallFlight {
             return [FeedbackItem(title: "Shot Shape", detail: "Set camera angle to 'Behind Ball Flight' for shot shape analysis.", severity: .info, confidence: 1.0)]
+        }
+        guard confidence >= 0.45 else {
+            return [FeedbackItem(title: "Shot Shape: Unknown", detail: "Shot shape was not reliable enough to call from the ball trail. A diagonal or short trail is treated as weak evidence.", severity: .info, confidence: confidence)]
         }
 
         switch shape {
         case .straight:
-            return [FeedbackItem(title: "Shot Shape: Straight", detail: "Ball tracked a straight flight line.", severity: .positive, confidence: 0.6)]
+            return [FeedbackItem(title: "Shot Shape: Straight", detail: "Ball tracked a straight flight line.", severity: .positive, confidence: confidence)]
         case .fadeOrSlice:
-            return [FeedbackItem(title: "Shot Shape: Fade / Slice", detail: "Ball curved left-to-right (for right-handed player). Check club path and face angle at impact.", severity: .info, confidence: 0.55)]
+            return [FeedbackItem(title: "Shot Shape: Fade / Slice", detail: "Ball curved left-to-right (for right-handed player). Check club path and face angle at impact.", severity: .info, confidence: confidence)]
         case .drawOrHook:
-            return [FeedbackItem(title: "Shot Shape: Draw / Hook", detail: "Ball curved right-to-left (for right-handed player). Club path may be too far inside-out.", severity: .info, confidence: 0.55)]
+            return [FeedbackItem(title: "Shot Shape: Draw / Hook", detail: "Ball curved right-to-left (for right-handed player). Club path may be too far inside-out.", severity: .info, confidence: confidence)]
         case .unknown:
             return [FeedbackItem(title: "Shot Shape: Unknown", detail: "Ball could not be tracked well enough to determine shot shape.", severity: .info, confidence: 0.2)]
         }

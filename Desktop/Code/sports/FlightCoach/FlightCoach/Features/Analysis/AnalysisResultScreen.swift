@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct AnalysisResultScreen: View {
     let session: PracticeSession
@@ -8,6 +9,7 @@ struct AnalysisResultScreen: View {
     @State private var navigateToAnalysis = false
     @State private var showManualCorrection = false
     @State private var showDeleteConfirm = false
+    @State private var videoAspectRatio: CGFloat?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -47,6 +49,9 @@ struct AnalysisResultScreen: View {
         .sheet(isPresented: $showManualCorrection) {
             ManualCorrectionSheet(session: session)
         }
+        .task {
+            videoAspectRatio = await loadVideoAspectRatio()
+        }
         .confirmationDialog("Delete this session?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { deleteSession() }
             Button("Cancel", role: .cancel) {}
@@ -62,8 +67,13 @@ struct AnalysisResultScreen: View {
             if let result = session.analysisResult {
                 GeometryReader { geo in
                     let contactIndex = session.effectiveContactFrameIndex
-                    BallTrailOverlayView(trackPoints: result.ballTrackPoints, highlightFrameIndex: contactIndex)
+                    BallTrailOverlayView(
+                        trackPoints: result.ballTrackPoints,
+                        highlightFrameIndex: contactIndex,
+                        videoAspectRatio: videoAspectRatio
+                    )
                 }
+                .allowsHitTesting(false)
             }
         }
     }
@@ -165,6 +175,22 @@ struct AnalysisResultScreen: View {
         let repo = SessionRepository(modelContext: modelContext)
         try? repo.delete(session)
         dismiss()
+    }
+
+    private func loadVideoAspectRatio() async -> CGFloat? {
+        guard let url = VideoStorageService.shared.videoURL(for: session) else { return nil }
+        let asset = AVURLAsset(url: url)
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first,
+              let naturalSize = try? await track.load(.naturalSize),
+              let transform = try? await track.load(.preferredTransform) else {
+            return nil
+        }
+
+        let transformed = CGRect(origin: .zero, size: naturalSize).applying(transform)
+        let width = abs(transformed.width)
+        let height = abs(transformed.height)
+        guard width > 0, height > 0 else { return nil }
+        return width / height
     }
 }
 

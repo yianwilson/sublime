@@ -42,6 +42,7 @@ final class VideoFrameExtractor {
     }
 
     func extractFrames(
+        frameRange: ClosedRange<Int>? = nil,
         stride: Int = 1,
         onProgress: ((Double) -> Void)? = nil
     ) async throws -> [VideoFrame] {
@@ -51,6 +52,7 @@ final class VideoFrameExtractor {
         guard let track = tracks.first else {
             throw FrameExtractorError.noVideoTrack
         }
+        let preferredTransform = try await track.load(.preferredTransform)
 
         let outputSettings: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
@@ -65,20 +67,25 @@ final class VideoFrameExtractor {
 
         var frames: [VideoFrame] = []
         var frameIndex = 0
+        let lowerBound = frameRange?.lowerBound ?? 0
+        let upperBound = frameRange?.upperBound ?? totalFrames
+        let expectedFrames = max(1, upperBound - lowerBound + 1)
 
         while let sampleBuffer = output.copyNextSampleBuffer() {
             defer { frameIndex += 1 }
+            if frameIndex < lowerBound { continue }
+            if frameIndex > upperBound { break }
             guard frameIndex % stride == 0 else { continue }
 
             let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             let timestamp = pts.seconds
 
             guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { continue }
-            let ciImage = CIImage(cvImageBuffer: imageBuffer)
+            let ciImage = displayOrientedImage(CIImage(cvImageBuffer: imageBuffer), preferredTransform: preferredTransform)
 
             frames.append(VideoFrame(index: frameIndex, timestamp: timestamp, image: ciImage))
 
-            let progress = Double(frameIndex) / Double(max(1, totalFrames))
+            let progress = Double(frameIndex - lowerBound) / Double(expectedFrames)
             onProgress?(min(progress, 1.0))
         }
 
@@ -103,6 +110,7 @@ final class VideoFrameExtractor {
 
         let tracks = try await asset.loadTracks(withMediaType: .video)
         guard let track = tracks.first else { throw FrameExtractorError.noVideoTrack }
+        let preferredTransform = try await track.load(.preferredTransform)
 
         let outputSettings: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
@@ -125,7 +133,8 @@ final class VideoFrameExtractor {
             let globalIndex = Int((pts.seconds * frameRate).rounded())
 
             guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { continue }
-            frames.append(VideoFrame(index: globalIndex, timestamp: pts.seconds, image: CIImage(cvImageBuffer: imageBuffer)))
+            let ciImage = displayOrientedImage(CIImage(cvImageBuffer: imageBuffer), preferredTransform: preferredTransform)
+            frames.append(VideoFrame(index: globalIndex, timestamp: pts.seconds, image: ciImage))
 
             onProgress?(Double(localIndex) / Double(windowFrameCount))
             if localIndex % 20 == 0 { await Task.yield() }
@@ -143,6 +152,13 @@ final class VideoFrameExtractor {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         let cgImage = try await imageGenerator.image(at: cmTime).image
         return CIImage(cgImage: cgImage)
+    }
+
+    private func displayOrientedImage(_ image: CIImage, preferredTransform: CGAffineTransform) -> CIImage {
+        let transformed = image.transformed(by: preferredTransform)
+        let extent = transformed.extent
+        guard extent.origin != .zero else { return transformed }
+        return transformed.transformed(by: CGAffineTransform(translationX: -extent.origin.x, y: -extent.origin.y))
     }
 }
 

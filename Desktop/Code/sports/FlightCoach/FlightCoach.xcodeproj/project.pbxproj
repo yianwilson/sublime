@@ -8,12 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		0135269068AACF27EBBC1E90 /* AnalysisResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF91877A6AEDFB944B6ACB15 /* AnalysisResultScreen.swift */; };
+		0D3EB7CA9BC01C8F45DD4B69 /* BallTrackingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA4E9CDCC27FC835CF2B601F /* BallTrackingModels.swift */; };
 		0D69A28725C3F5E00DEA5238 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E537E0A6B8DE61131A0AB640 /* SettingsScreen.swift */; };
 		0E1AF8E07143B8BA91C1F7A1 /* SportSelectScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C6D119DD1D80A31E869F2F /* SportSelectScreen.swift */; };
 		140107DB7DE2E64CE2A45107 /* SessionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD4E7FA40247C32AC0EA9A2 /* SessionRepository.swift */; };
 		1675843FB20303E20D714E5F /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B22BCF218E3F1A6C2C0F5BA /* Vision.framework */; };
 		214F0670F7ABC8BA6F09CAC4 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BBFD2053C0C947F4E60A98 /* HomeScreen.swift */; };
 		21BAF8CEE0CA3F2D87F631CE /* AnalysisPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D884B6874F31C48DFED693 /* AnalysisPipeline.swift */; };
+		31D19B06766C48EF460EA273 /* GolfImpactWindowEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC79B21A5B5676A200A56D36 /* GolfImpactWindowEstimator.swift */; };
 		34DFDBB87B4065F93C587BE6 /* PoseModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE315357D9230274BD1244D /* PoseModels.swift */; };
 		367F114EF30E324AF6A122B5 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FCA187CCA597280589270B /* VideoPlayerView.swift */; };
 		3983A8A8100787CCD28BDF5C /* PoseDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A578848BB1E08D0AFA393E7 /* PoseDetectionService.swift */; };
@@ -77,6 +79,7 @@
 		886BF4951A45BE3748C29BAA /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		9F7B6B83F632A2662CF0277D /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		A3719FB3034E93D009DDF39C /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		AC79B21A5B5676A200A56D36 /* GolfImpactWindowEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfImpactWindowEstimator.swift; sourceTree = "<group>"; };
 		B367143DCAADF181256CA940 /* VideoImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportManager.swift; sourceTree = "<group>"; };
 		B4B4AFEEB0E06D1FAE1B7973 /* ManualCorrection+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ManualCorrection+Extensions.swift"; sourceTree = "<group>"; };
 		B78759410E08F12E42327BFD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -88,6 +91,7 @@
 		E537E0A6B8DE61131A0AB640 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		E91E8276C5F1381C89B41EE2 /* ContactDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetectionService.swift; sourceTree = "<group>"; };
 		E9EB010F9AA9CC7B98B70353 /* PhotosUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PhotosUI.framework; path = System/Library/Frameworks/PhotosUI.framework; sourceTree = SDKROOT; };
+		EA4E9CDCC27FC835CF2B601F /* BallTrackingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BallTrackingModels.swift; sourceTree = "<group>"; };
 		EE65D5246F5F9CEB9D34F774 /* SportType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportType.swift; sourceTree = "<group>"; };
 		EEE6317FF1040E082329C4CE /* CameraRecordingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRecordingScreen.swift; sourceTree = "<group>"; };
 		EF91877A6AEDFB944B6ACB15 /* AnalysisResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisResultScreen.swift; sourceTree = "<group>"; };
@@ -225,6 +229,7 @@
 				E91E8276C5F1381C89B41EE2 /* ContactDetectionService.swift */,
 				DDFA2EDFDEE5C1AFA5E44C64 /* FeedbackEngine.swift */,
 				F1C8848FDD59ABC2F4BB59E5 /* GolfAnalysisService.swift */,
+				AC79B21A5B5676A200A56D36 /* GolfImpactWindowEstimator.swift */,
 				75F9BEE60616043BE0C9C651 /* ManualCorrectionService.swift */,
 				461E6369F874502914F2D07A /* OverlayRenderer.swift */,
 				5A578848BB1E08D0AFA393E7 /* PoseDetectionService.swift */,
@@ -261,6 +266,7 @@
 			isa = PBXGroup;
 			children = (
 				3388BE38556D44B2B809C244 /* AnalysisModels.swift */,
+				EA4E9CDCC27FC835CF2B601F /* BallTrackingModels.swift */,
 				0FE315357D9230274BD1244D /* PoseModels.swift */,
 				71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */,
 				EE65D5246F5F9CEB9D34F774 /* SportType.swift */,
@@ -404,6 +410,7 @@
 				7A0D1EEE9114C25768E5686E /* AnalysisProgressScreen.swift in Sources */,
 				0135269068AACF27EBBC1E90 /* AnalysisResultScreen.swift in Sources */,
 				F72396104BED978706E07C00 /* AppTheme.swift in Sources */,
+				0D3EB7CA9BC01C8F45DD4B69 /* BallTrackingModels.swift in Sources */,
 				F9433A0EE6A471D21B4DF47F /* BallTrackingService.swift in Sources */,
 				61B3B72A4DF9A29E49ADD648 /* CameraManager.swift in Sources */,
 				70490BACAC39693B2AC2D3B5 /* CameraRecordingScreen.swift in Sources */,
@@ -412,6 +419,7 @@
 				EC7A776E3A52A563B71EDB08 /* FeedbackEngine.swift in Sources */,
 				B5FDADD7FF6F369D4FFD2CDC /* FlightCoachApp.swift in Sources */,
 				90576A54987A90A64A87F5C0 /* GolfAnalysisService.swift in Sources */,
+				31D19B06766C48EF460EA273 /* GolfImpactWindowEstimator.swift in Sources */,
 				214F0670F7ABC8BA6F09CAC4 /* HomeScreen.swift in Sources */,
 				7680764FDAE6D9F8329C0088 /* ManualCorrection+Extensions.swift in Sources */,
 				6434F3329413CEB3F7D40FEC /* ManualCorrectionService.swift in Sources */,

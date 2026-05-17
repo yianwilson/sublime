@@ -20,19 +20,31 @@ final class ContactDetectionService {
     func detectGolfImpact(
         poseFrames: [PoseFrame],
         ballTrackPoints: [BallTrackPoint],
-        totalFrames: Int
+        totalFrames: Int,
+        impactWindow: ImpactWindow? = nil
     ) -> (frameIndex: Int, confidence: Float) {
-        if let ballBased = detectImpactFromBallAppearance(ballTrackPoints: ballTrackPoints) {
+        if let ballBased = detectImpactFromBallAppearance(ballTrackPoints: ballTrackPoints, impactWindow: impactWindow) {
+            if let impactWindow {
+                let agreement = frameInside(ballBased.0, impactWindow)
+                let confidence = agreement ? min(0.9, ballBased.1 + impactWindow.confidence * 0.15) : ballBased.1 * 0.75
+                return (ballBased.0, confidence)
+            }
             return ballBased
         }
         if let poseBased = detectImpactFromWristAcceleration(poseFrames: poseFrames) {
+            if let impactWindow, !frameInside(poseBased.0, impactWindow) {
+                return (impactWindow.estimatedFrameIndex, max(0.25, impactWindow.confidence * 0.7))
+            }
             return poseBased
+        }
+        if let impactWindow {
+            return (impactWindow.estimatedFrameIndex, max(0.2, impactWindow.confidence * 0.65))
         }
         let estimated = estimateImpactFromSwingPhase(poseFrames: poseFrames, totalFrames: totalFrames)
         return estimated
     }
 
-    private func detectImpactFromBallAppearance(ballTrackPoints: [BallTrackPoint]) -> (Int, Float)? {
+    private func detectImpactFromBallAppearance(ballTrackPoints: [BallTrackPoint], impactWindow: ImpactWindow?) -> (Int, Float)? {
         guard ballTrackPoints.count >= 4 else { return nil }
         let sorted = ballTrackPoints.sorted { $0.frameIndex < $1.frameIndex }
 
@@ -44,20 +56,39 @@ final class ContactDetectionService {
         // Require: ball was stationary (low velocity) for the frame just before,
         // then has a sustained velocity increase for at least two consecutive frames.
         for i in 2..<sorted.count - 1 {
+            if let impactWindow {
+                let expanded = impactWindow.expanded(by: 8, lowerBound: sorted.first?.frameIndex ?? 0, upperBound: sorted.last?.frameIndex ?? totalFrameIndex(sorted))
+                guard frameInside(sorted[i].frameIndex, expanded) else { continue }
+            }
+
             let vBefore  = vel(sorted[i - 2], sorted[i - 1])   // pre-impact
             let vAt      = vel(sorted[i - 1], sorted[i])        // at impact
             let vAfter   = vel(sorted[i],     sorted[i + 1])    // post-impact
 
-            let wasSteady  = vBefore < 0.018
-            let nowMoving  = vAt > 0.040 && sorted[i].confidence > 0.45
-            let sustained  = vAfter > 0.020
+            let dtAt = max(1.0 / 240.0, sorted[i].timestamp - sorted[i - 1].timestamp)
+            let dtAfter = max(1.0 / 240.0, sorted[i + 1].timestamp - sorted[i].timestamp)
+            let speedAt = vAt / Float(dtAt)
+            let speedAfter = vAfter / Float(dtAfter)
 
-            if wasSteady && nowMoving && sustained {
-                let conf = min(0.85, sorted[i].confidence * min(1.0, vAt * 8))
+            let wasSteady  = vBefore < 0.020
+            let nowMoving  = vAt > 0.040 && sorted[i].confidence > 0.45
+            let fastLaunch = speedAt > 0.7
+            let sustained  = vAfter > 0.020 || speedAfter > 0.35
+
+            if wasSteady && nowMoving && sustained && fastLaunch {
+                let conf = min(0.85, sorted[i].confidence * min(1.0, speedAt * 0.5))
                 return (sorted[i].frameIndex, conf)
             }
         }
         return nil
+    }
+
+    private func frameInside(_ frameIndex: Int, _ impactWindow: ImpactWindow) -> Bool {
+        frameIndex >= impactWindow.startFrameIndex && frameIndex <= impactWindow.endFrameIndex
+    }
+
+    private func totalFrameIndex(_ points: [BallTrackPoint]) -> Int {
+        points.last?.frameIndex ?? 0
     }
 
     private func detectImpactFromWristAcceleration(poseFrames: [PoseFrame]) -> (Int, Float)? {

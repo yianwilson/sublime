@@ -64,9 +64,12 @@ struct ShotShapeBadge: View {
             Text("Shot Shape")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(shape.displayName)
+            Text(confidence >= 0.45 ? shape.displayName : "Unknown")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(confidence > 0.4 ? .primary : .secondary)
+            Text(confidence >= 0.45 ? "Tracked" : "Not enough track")
+                .font(.caption2)
+                .foregroundStyle(confidence >= 0.45 ? .green : .orange)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
