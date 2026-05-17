@@ -1,9 +1,14 @@
 import SwiftUI
+import SwiftData
 
 struct AnalysisProgressScreen: View {
     let session: PracticeSession
+
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var pipeline = AnalysisPipeline()
     @State private var didStart = false
+    @State private var isDone = false
+    @State private var failureMessage: String?
 
     var body: some View {
         VStack(spacing: 32) {
@@ -30,25 +35,26 @@ struct AnalysisProgressScreen: View {
         .navigationTitle("Processing")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
-        .task { if !didStart { didStart = true; await pipeline.run(session: session) } }
-        .navigationDestination(isPresented: .constant(isDone)) {
-            AnalysisResultScreen(session: session)
-        }
-        .onAppear {
-            if case .done(let result) = pipeline.progress {
-                session.analysisResult = result
-            }
+        .task {
+            guard !didStart else { return }
+            didStart = true
+            await pipeline.run(session: session)
         }
         .onChange(of: pipeline.progress) { _, newProgress in
-            if case .done(let result) = newProgress {
+            switch newProgress {
+            case .done(let result):
                 session.analysisResult = result
+                try? modelContext.save()
+                isDone = true
+            case .failed(let msg):
+                failureMessage = msg
+            default:
+                break
             }
         }
-    }
-
-    private var isDone: Bool {
-        if case .done = pipeline.progress { return true }
-        return false
+        .navigationDestination(isPresented: $isDone) {
+            AnalysisResultScreen(session: session)
+        }
     }
 
     private var progressContent: some View {
@@ -85,7 +91,7 @@ struct AnalysisProgressScreen: View {
                 ProgressRow(label: "Computing metrics", progress: 1, isActive: false)
 
             case .failed(let msg):
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.largeTitle)
                         .foregroundStyle(.orange)

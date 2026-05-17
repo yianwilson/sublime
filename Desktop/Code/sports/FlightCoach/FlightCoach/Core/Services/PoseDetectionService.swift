@@ -5,14 +5,14 @@ import CoreImage
 final class PoseDetectionService {
     static let shared = PoseDetectionService()
 
-    private let requestHandler = VNSequenceRequestHandler()
-
     private init() {}
 
-    func detectPose(in image: CIImage, frameIndex: Int, timestamp: TimeInterval) async throws -> PoseFrame? {
+    func detectPose(in image: CIImage, frameIndex: Int, timestamp: TimeInterval) throws -> PoseFrame? {
         let request = VNDetectHumanBodyPoseRequest()
-
-        try requestHandler.perform([request], on: image, orientation: .up)
+        // VNImageRequestHandler is correct for per-frame detection.
+        // VNSequenceRequestHandler is only for tracking requests across frames.
+        let handler = VNImageRequestHandler(ciImage: image, orientation: .up, options: [:])
+        try handler.perform([request])
 
         guard let observation = request.results?.first else {
             return nil
@@ -50,10 +50,12 @@ final class PoseDetectionService {
         var results: [PoseFrame] = []
 
         for (idx, frame) in frames.enumerated() {
-            if let poseFrame = try? await detectPose(in: frame.image, frameIndex: frame.index, timestamp: frame.timestamp) {
+            if let poseFrame = try? detectPose(in: frame.image, frameIndex: frame.index, timestamp: frame.timestamp) {
                 results.append(poseFrame)
             }
             onProgress?(Double(idx + 1) / Double(frames.count))
+            // Yield periodically so the main actor stays responsive
+            if idx % 10 == 0 { await Task.yield() }
         }
 
         return results

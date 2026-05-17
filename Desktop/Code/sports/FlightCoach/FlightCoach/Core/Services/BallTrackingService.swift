@@ -6,6 +6,12 @@ import CoreImage.CIFilterBuiltins
 final class BallTrackingService {
     static let shared = BallTrackingService()
 
+    // Cached context — creating one per frame is expensive
+    private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+
+    // Scale factor for diff image before pixel walking — keeps it fast on HD video
+    private let diffScale: CGFloat = 0.25
+
     private init() {}
 
     func trackBall(
@@ -18,19 +24,23 @@ final class BallTrackingService {
         var trackPoints: [BallTrackPoint] = []
         var previousImage: CIImage? = nil
 
-        let startIndex = max(0, (contactFrameHint ?? 0) - 5)
-        let analysisFrames = Array(frames[startIndex...])
-
-        for (idx, frame) in analysisFrames.enumerated() {
+        // Scan all frames but focus analysis around where the ball should move
+        for (idx, frame) in frames.enumerated() {
             defer { previousImage = frame.image }
 
             guard let prev = previousImage else { continue }
 
-            if let point = await detectBallMovement(current: frame.image, previous: prev, frameIndex: frame.index, timestamp: frame.timestamp) {
+            if let point = detectBallMovement(
+                current: frame.image,
+                previous: prev,
+                frameIndex: frame.index,
+                timestamp: frame.timestamp
+            ) {
                 trackPoints.append(point)
             }
 
-            onProgress?(Double(idx + 1) / Double(analysisFrames.count))
+            onProgress?(Double(idx + 1) / Double(frames.count))
+            if idx % 10 == 0 { await Task.yield() }
         }
 
         return smooth(trackPoints: trackPoints)
@@ -41,47 +51,62 @@ final class BallTrackingService {
         previous: CIImage,
         frameIndex: Int,
         timestamp: TimeInterval
-    ) async -> BallTrackPoint? {
-        let differenceFilter = CIFilter.colorAbsoluteDifference()
-        differenceFilter.inputImage = current
-        differenceFilter.inputImage2 = previous
+    ) -> BallTrackPoint? {
+        // Scale down both frames for speed
+        let scale = CIFilter.lanczosScaleTransform()
+        scale.inputImage = current
+        scale.scale = Float(diffScale)
+        scale.aspectRatio = 1.0
+        guard let scaledCurrent = scale.outputImage else { return nil }
 
-        guard let diffImage = differenceFilter.outputImage else { return nil }
+        scale.inputImage = previous
+        guard let scaledPrevious = scale.outputImage else { return nil }
 
-        let thresholdFilter = CIFilter.colorThreshold()
-        thresholdFilter.inputImage = diffImage
-        thresholdFilter.threshold = 0.15
+        // Absolute difference
+        let diff = CIFilter.colorAbsoluteDifference()
+        diff.inputImage = scaledCurrent
+        diff.inputImage2 = scaledPrevious
+        guard let diffImage = diff.outputImage else { return nil }
 
-        guard let thresholded = thresholdFilter.outputImage else { return nil }
+        // Threshold to isolate significant motion
+        let thresh = CIFilter.colorThreshold()
+        thresh.inputImage = diffImage
+        thresh.threshold = 0.12
+        guard let thresholded = thresh.outputImage else { return nil }
 
         let extent = thresholded.extent
         guard !extent.isInfinite, extent.width > 0, extent.height > 0 else { return nil }
 
-        let context = CIContext()
-        guard let cgImage = context.createCGImage(thresholded, from: extent) else { return nil }
+        guard let cgImage = ciContext.createCGImage(thresholded, from: extent) else { return nil }
 
-        let (centroid, pixelCount, confidence) = computeBrightCentroid(from: cgImage, imageSize: extent.size)
+        let (centroid, pixelCount, confidence) = computeBrightCentroid(from: cgImage)
 
-        guard pixelCount > 5 && pixelCount < 2000 && confidence > 0.3 else { return nil }
+        // pixelCount window: too few = noise, too many = large motion (person, not ball)
+        guard pixelCount > 8, pixelCount < 1500, confidence > 0.25 else { return nil }
+
+        // Map centroid back to normalised [0,1] video coords
+        let normX = Float(centroid.x / extent.width)
+        let normY = Float(1.0 - centroid.y / extent.height)
 
         return BallTrackPoint(
             frameIndex: frameIndex,
             timestamp: timestamp,
-            x: Float(centroid.x / extent.width),
-            y: Float(1.0 - centroid.y / extent.height),
+            x: normX,
+            y: normY,
             confidence: Float(confidence)
         )
     }
 
-    private func computeBrightCentroid(from image: CGImage, imageSize: CGSize) -> (CGPoint, Int, Double) {
+    private func computeBrightCentroid(from image: CGImage) -> (CGPoint, Int, Double) {
         let width = image.width
         let height = image.height
+
         guard let data = image.dataProvider?.data,
               let ptr = CFDataGetBytePtr(data) else {
             return (.zero, 0, 0)
         }
 
-        let bytesPerPixel = image.bitsPerPixel / 8
+        let bytesPerPixel = max(1, image.bitsPerPixel / 8)
         let bytesPerRow = image.bytesPerRow
         var sumX: Double = 0
         var sumY: Double = 0
@@ -90,11 +115,12 @@ final class BallTrackingService {
         for y in 0..<height {
             for x in 0..<width {
                 let offset = y * bytesPerRow + x * bytesPerPixel
-                let b = Double(ptr[offset])
+                guard offset + 2 < CFDataGetLength(data) else { continue }
+                let r = Double(ptr[offset])
                 let g = Double(ptr[offset + 1])
-                let r = Double(ptr[offset + 2])
+                let b = Double(ptr[offset + 2])
                 let brightness = (r + g + b) / 765.0
-                if brightness > 0.5 {
+                if brightness > 0.45 {
                     sumX += Double(x)
                     sumY += Double(y)
                     count += 1
@@ -105,30 +131,24 @@ final class BallTrackingService {
         guard count > 0 else { return (.zero, 0, 0) }
 
         let centroid = CGPoint(x: sumX / Double(count), y: sumY / Double(count))
-        let confidence = min(1.0, Double(count) / 200.0)
+        // Confidence scales with how compact the blob is (small tight clusters = ball-like)
+        let confidence = min(1.0, Double(count) / 300.0)
         return (centroid, count, confidence)
     }
 
     private func smooth(trackPoints: [BallTrackPoint]) -> [BallTrackPoint] {
         guard trackPoints.count > 2 else { return trackPoints }
 
-        var smoothed: [BallTrackPoint] = []
-        for i in 0..<trackPoints.count {
+        return trackPoints.enumerated().map { i, curr in
             let prev = trackPoints[max(0, i - 1)]
-            let curr = trackPoints[i]
             let next = trackPoints[min(trackPoints.count - 1, i + 1)]
-
-            let smoothX = (prev.x * 0.25 + curr.x * 0.5 + next.x * 0.25)
-            let smoothY = (prev.y * 0.25 + curr.y * 0.5 + next.y * 0.25)
-
-            smoothed.append(BallTrackPoint(
+            return BallTrackPoint(
                 frameIndex: curr.frameIndex,
                 timestamp: curr.timestamp,
-                x: smoothX,
-                y: smoothY,
+                x: prev.x * 0.25 + curr.x * 0.5 + next.x * 0.25,
+                y: prev.y * 0.25 + curr.y * 0.5 + next.y * 0.25,
                 confidence: curr.confidence
-            ))
+            )
         }
-        return smoothed
     }
 }
