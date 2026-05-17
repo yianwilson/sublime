@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -28,6 +28,7 @@
 		4FFC4E6458142670B10FD119 /* FolioWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00859364915CA888B57BEB23 /* FolioWidget.swift */; };
 		57FAB842536192D5239EC981 /* PriceServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */; };
 		5D6A98391191DE6A5EC51C04 /* PortfolioComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3442B08EA0AFB934F9203277 /* PortfolioComparisonView.swift */; };
+		5EB16FC9E29C43FB61C311AF /* FolioBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E445EB71DBB363D2805714 /* FolioBackup.swift */; };
 		5F221C7A627CFCBF94276B9C /* WatchlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */; };
 		5FDCBBF4234D8ED902ACEA74 /* ManagePortfoliosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6555D04E472EB9F91F2833 /* ManagePortfoliosView.swift */; };
 		670E09EFD0CA231032EBF5D2 /* PerformanceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3624E9B99BF76B35BAF59A /* PerformanceSnapshot.swift */; };
@@ -45,6 +46,7 @@
 		940C6BCC623C0D9E00791E3A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDEF649E6F45C0F68A2B7A19 /* DashboardView.swift */; };
 		979A79EE6F207DC04120F369 /* PortfoliosViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0987CF55427CE3605B916650 /* PortfoliosViewModel.swift */; };
 		9ECD1D76063C62DA06BEADC3 /* UpcomingEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B29AD58F0E5CC41F6F3135 /* UpcomingEvent.swift */; };
+		A8F28A568DC34ED5383F7F6A /* PersistenceServiceBackupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D05EBACC6AA8C222D168953 /* PersistenceServiceBackupTests.swift */; };
 		B49BEF2E778C6C57719ADE83 /* NewsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21723B32CCB11B08A06255DA /* NewsService.swift */; };
 		B6ADB5796E64EF2F629B917F /* FolioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4556A712E7A2B56DE80CBD /* FolioApp.swift */; };
 		B816E63D7A8C7CA37F133706 /* TradeAnalyticsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3109B62C85F16B939451C93C /* TradeAnalyticsEngineTests.swift */; };
@@ -112,6 +114,7 @@
 		1C86A6E280AB9189772FF395 /* CurrencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyService.swift; sourceTree = "<group>"; };
 		1D19281FA30AB14AC42F7D9D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		21723B32CCB11B08A06255DA /* NewsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsService.swift; sourceTree = "<group>"; };
+		24ECA492DFFA19EC97E58194 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2829AA309AC5FCCCA3071D23 /* TradeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDetailView.swift; sourceTree = "<group>"; };
 		2B96818EF9F8E5D9955881D2 /* WatchlistViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistViewModelTests.swift; sourceTree = "<group>"; };
 		2E10A0684931E99469B4B98A /* TimeSeriesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSeriesEngine.swift; sourceTree = "<group>"; };
@@ -125,13 +128,16 @@
 		54D4008A50CAB7A791191F9F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5923DF74995C7E4C35D65F7F /* AlertsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsService.swift; sourceTree = "<group>"; };
 		5A083B3726DCFCE77E7E9FE0 /* PriceServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceServiceProtocol.swift; sourceTree = "<group>"; };
-		5B8BAAD0990BFEBF5AC22207 /* Folio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Folio.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5EA1204B300960E08D2B68C9 /* FolioWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FolioWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B8BAAD0990BFEBF5AC22207 /* Folio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Folio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5EA1204B300960E08D2B68C9 /* FolioWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FolioWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		63E445EB71DBB363D2805714 /* FolioBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolioBackup.swift; sourceTree = "<group>"; };
 		6917C01D9862477D1297118F /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
 		6BB51A125EC50A54621232F6 /* FolioTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6555D04E472EB9F91F2833 /* ManagePortfoliosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagePortfoliosView.swift; sourceTree = "<group>"; };
 		74E669A0B5D8BB0B0DE2573E /* FIFOEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIFOEngine.swift; sourceTree = "<group>"; };
+		87D83803635133CE2F717E30 /* Folio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Folio.entitlements; sourceTree = "<group>"; };
 		8B4EA41EDA75780003D86348 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8D05EBACC6AA8C222D168953 /* PersistenceServiceBackupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceServiceBackupTests.swift; sourceTree = "<group>"; };
 		8F831CF0511C9371204F2256 /* WatchlistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistItem.swift; sourceTree = "<group>"; };
 		99F87D5ECF86E5605DA5803E /* PriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceService.swift; sourceTree = "<group>"; };
 		99FF1239494F69A7F358FDC4 /* PortfolioListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioListView.swift; sourceTree = "<group>"; };
@@ -245,6 +251,7 @@
 			children = (
 				DEA67FB49323078E74F43F30 /* AssetViewModelTests.swift */,
 				9A96FEFECEA234BA6C64D0DD /* FIFOEngineTests.swift */,
+				8D05EBACC6AA8C222D168953 /* PersistenceServiceBackupTests.swift */,
 				E327DAB16D9FE9CEF80F1006 /* PortfolioViewModelTests.swift */,
 				15602CD7E219F0CCC8E55F21 /* TimeSeriesEngineTests.swift */,
 				3109B62C85F16B939451C93C /* TradeAnalyticsEngineTests.swift */,
@@ -285,6 +292,7 @@
 			children = (
 				0C2A8A7D05C52A941A77904A /* AssetQuote.swift */,
 				0511269A6146088E532D4276 /* AssetType.swift */,
+				63E445EB71DBB363D2805714 /* FolioBackup.swift */,
 				4A5F42F5D8776921F118C8F9 /* Holding.swift */,
 				A35DEDE5E6DCB8EF80830CD9 /* Insight.swift */,
 				EE60E0E6935355C9CD29B6DC /* NewsItem.swift */,
@@ -352,6 +360,7 @@
 			isa = PBXGroup;
 			children = (
 				00859364915CA888B57BEB23 /* FolioWidget.swift */,
+				24ECA492DFFA19EC97E58194 /* Info.plist */,
 			);
 			path = FolioWidget;
 			sourceTree = "<group>";
@@ -395,6 +404,7 @@
 			isa = PBXGroup;
 			children = (
 				54D4008A50CAB7A791191F9F /* Assets.xcassets */,
+				87D83803635133CE2F717E30 /* Folio.entitlements */,
 				8B4EA41EDA75780003D86348 /* Info.plist */,
 				218D0BBA62C139CC9BAFEE74 /* App */,
 				CC992E9C4D98091FB3E623FF /* Core */,
@@ -473,7 +483,6 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					0C56AF64BE26DB444D566E60 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -488,7 +497,6 @@
 			);
 			mainGroup = 167E3E30A49919FD8D56D74D;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -517,6 +525,7 @@
 			files = (
 				BD40C0A15A09F558DE867154 /* AssetViewModelTests.swift in Sources */,
 				67190899DC98DDB4B377BB69 /* FIFOEngineTests.swift in Sources */,
+				A8F28A568DC34ED5383F7F6A /* PersistenceServiceBackupTests.swift in Sources */,
 				7A5E77A4D5CE405F86F42C8A /* PortfolioViewModelTests.swift in Sources */,
 				FF2E2EE25E31195F7A164D41 /* TimeSeriesEngineTests.swift in Sources */,
 				B816E63D7A8C7CA37F133706 /* TradeAnalyticsEngineTests.swift in Sources */,
@@ -544,6 +553,7 @@
 				21B08D19994EBFAD758C3D64 /* EventsService.swift in Sources */,
 				1A47A07BF91905D953A99335 /* FIFOEngine.swift in Sources */,
 				B6ADB5796E64EF2F629B917F /* FolioApp.swift in Sources */,
+				5EB16FC9E29C43FB61C311AF /* FolioBackup.swift in Sources */,
 				0464EB4CAC79040472202C8C /* HistoricalPriceService.swift in Sources */,
 				935B06B7300C0866904FAD38 /* Holding.swift in Sources */,
 				059E485F0B8C384140A12F21 /* Insight.swift in Sources */,
@@ -604,9 +614,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Folio/Folio.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 36EQMB64PP;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Folio/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -614,7 +625,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edward.folio;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -624,15 +635,15 @@
 		3C1D3272A7AD924FBBAEE2AC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				DEVELOPMENT_TEAM = 36EQMB64PP;
+				INFOPLIST_FILE = FolioWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edward.folio.widget;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -642,15 +653,15 @@
 		43252AA6E43121E9C13845CB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				DEVELOPMENT_TEAM = 36EQMB64PP;
+				INFOPLIST_FILE = FolioWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edward.folio.widget;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -762,9 +773,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Folio/Folio.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 36EQMB64PP;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Folio/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -772,7 +784,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.folio.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edward.folio;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";

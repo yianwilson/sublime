@@ -2,39 +2,48 @@ import Foundation
 
 final class NewsService {
 
+    private let apiKey = "d84kdcpr01qutij97mc0d84kdcpr01qutij97mcg"
+    private let finnhubBase = "https://finnhub.io/api/v1"
+
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
-        config.httpAdditionalHeaders = [
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15"
-        ]
         return URLSession(configuration: config)
     }()
 
     func fetchMarketNews() async -> [NewsItem] {
-        // Fetch general market news using SPY as a proxy for broad market headlines
-        return await fetchNews(for: "SPY")
+        guard let url = URL(string: "\(finnhubBase)/news?category=general&token=\(apiKey)") else { return [] }
+        return await fetchAndParse(url: url)
     }
 
     func fetchNews(for symbol: String) async -> [NewsItem] {
-        let encoded = symbol.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? symbol
-        guard let url = URL(string: "https://query1.finance.yahoo.com/v1/finance/search?q=\(encoded)&newsCount=8&quotesCount=0&lang=en-US") else { return [] }
+        let finnhub = symbol.uppercased().hasSuffix(".AX")
+            ? "ASX:\(String(symbol.dropLast(3)).uppercased())"
+            : symbol.uppercased()
+        let encoded = finnhub.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? finnhub
+        let to   = ISO8601DateFormatter().string(from: Date())
+        let from = ISO8601DateFormatter().string(from: Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date())
+        let fromDate = String(from.prefix(10))
+        let toDate   = String(to.prefix(10))
+        guard let url = URL(string: "\(finnhubBase)/company-news?symbol=\(encoded)&from=\(fromDate)&to=\(toDate)&token=\(apiKey)") else { return [] }
+        return await fetchAndParse(url: url)
+    }
+
+    private func fetchAndParse(url: URL) async -> [NewsItem] {
         do {
             let (data, _) = try await session.data(from: url)
-            let json = try JSONDecoder().decode(YahooNewsResponse.self, from: data)
-            return json.news?.compactMap { item in
-                guard let title = item.title, let uuid = item.uuid else { return nil }
-                let date = item.providerPublishTime.map { Date(timeIntervalSince1970: TimeInterval($0)) } ?? Date()
-                let articleURL = item.link.flatMap { URL(string: $0) }
+            let items = try JSONDecoder().decode([FinnhubNewsItem].self, from: data)
+            return items.prefix(8).compactMap { item in
+                guard !item.headline.isEmpty else { return nil }
                 return NewsItem(
-                    id: uuid,
-                    title: title,
-                    publisher: item.publisher ?? "",
-                    publishedAt: date,
-                    url: articleURL,
-                    summary: item.summary
+                    id: String(item.id),
+                    title: item.headline,
+                    publisher: item.source,
+                    publishedAt: Date(timeIntervalSince1970: TimeInterval(item.datetime)),
+                    url: URL(string: item.url),
+                    summary: item.summary.isEmpty ? nil : item.summary
                 )
-            } ?? []
+            }
         } catch {
             return []
         }
@@ -43,15 +52,11 @@ final class NewsService {
 
 // MARK: - Response Models
 
-private struct YahooNewsResponse: Decodable {
-    let news: [YahooNewsItem]?
-}
-
-private struct YahooNewsItem: Decodable {
-    let uuid: String?
-    let title: String?
-    let publisher: String?
-    let providerPublishTime: Int?
-    let link: String?
-    let summary: String?
+private struct FinnhubNewsItem: Decodable {
+    let id: Int
+    let headline: String
+    let source: String
+    let datetime: Int
+    let url: String
+    let summary: String
 }

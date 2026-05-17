@@ -7,7 +7,8 @@ extension Double {
         let formatter = NumberFormatter()
         formatter.numberStyle   = .currency
         formatter.currencyCode  = code
-        formatter.maximumFractionDigits = self >= 1_000 ? 0 : self >= 1 ? 2 : 6
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
         return formatter.string(from: NSNumber(value: self)) ?? "$\(self)"
     }
 

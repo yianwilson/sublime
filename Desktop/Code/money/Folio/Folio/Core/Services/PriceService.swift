@@ -2,6 +2,9 @@ import Foundation
 
 final class PriceService: PriceServiceProtocol {
 
+    private let apiKey = "d84kdcpr01qutij97mc0d84kdcpr01qutij97mcg"
+    private let finnhubBase = "https://finnhub.io/api/v1"
+
     private let cryptoIdMap: [String: String] = [
         "BTC":   "bitcoin",
         "ETH":   "ethereum",
@@ -28,9 +31,6 @@ final class PriceService: PriceServiceProtocol {
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 12
-        config.httpAdditionalHeaders = [
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15"
-        ]
         return URLSession(configuration: config)
     }()
 
@@ -40,7 +40,7 @@ final class PriceService: PriceServiceProtocol {
         let stocks  = items.filter { $0.assetType == .stock || $0.assetType == .etf }
         let cryptos = items.filter { $0.assetType == .crypto }
 
-        async let stockQuotes  = fetchYahooQuotes(for: stocks)
+        async let stockQuotes  = fetchFinnhubQuotes(for: stocks)
         async let cryptoQuotes = fetchCryptoQuotes(for: cryptos)
 
         var result: [String: AssetQuote] = [:]
@@ -51,95 +51,82 @@ final class PriceService: PriceServiceProtocol {
     }
 
     func searchAssets(query: String) async -> [AssetSearchResult] {
-        async let stocks  = searchYahoo(query: query)
+        async let stocks  = searchFinnhub(query: query)
         async let cryptos = searchCoinGecko(query: query)
         let combined = await stocks + cryptos
         var seen = Set<String>()
         return combined.filter { seen.insert($0.id).inserted }
     }
 
-    // MARK: - Yahoo Finance (stocks & ETFs)
+    // MARK: - Finnhub (stocks & ETFs)
 
-    private func fetchYahooQuotes(for items: [PriceLookup]) async -> [String: AssetQuote] {
+    /// Converts stored symbol to Finnhub format.
+    /// Yahoo-style "BHP.AX" → Finnhub "ASX:BHP"; US symbols pass through unchanged.
+    private func finnhubSymbol(for symbol: String) -> (finnhub: String, currency: String) {
+        if symbol.uppercased().hasSuffix(".AX") {
+            let base = String(symbol.dropLast(3)).uppercased()
+            return ("ASX:\(base)", "AUD")
+        }
+        return (symbol.uppercased(), "USD")
+    }
+
+    private func fetchFinnhubQuotes(for items: [PriceLookup]) async -> [String: AssetQuote] {
         guard !items.isEmpty else { return [:] }
-        var quotes: [String: AssetQuote] = [:]
-        var sectors: [String: String] = [:]
-
-        await withTaskGroup(of: (String, AssetQuote?, String?).self) { group in
+        var result: [String: AssetQuote] = [:]
+        await withTaskGroup(of: (String, AssetQuote?).self) { group in
             for item in items {
                 group.addTask {
-                    async let quote  = self.fetchYahooQuote(symbol: item.symbol)
-                    async let sector = self.fetchSector(symbol: item.symbol)
-                    return (item.symbol, await quote, await sector)
+                    (item.symbol, await self.fetchFinnhubQuote(symbol: item.symbol))
                 }
             }
-            for await (symbol, quote, sector) in group {
-                if let quote { quotes[symbol] = quote }
-                if let sector { sectors[symbol] = sector }
+            for await (symbol, quote) in group {
+                if let quote { result[symbol] = quote }
             }
-        }
-
-        // Merge sector data into quotes
-        var result: [String: AssetQuote] = [:]
-        for (symbol, quote) in quotes {
-            result[symbol] = AssetQuote(
-                currentPrice:  quote.currentPrice,
-                previousClose: quote.previousClose,
-                currencyCode:  quote.currencyCode,
-                sector:        sectors[symbol],
-                preMarketPrice: quote.preMarketPrice,
-                postMarketPrice: quote.postMarketPrice
-            )
         }
         return result
     }
 
-    private func fetchYahooQuote(symbol: String) async -> AssetQuote? {
-        let encoded = symbol.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? symbol
-        guard let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encoded)?interval=1d&range=1d") else { return nil }
+    private func fetchFinnhubQuote(symbol: String) async -> AssetQuote? {
+        let (finnhub, currency) = finnhubSymbol(for: symbol)
+        let encoded = finnhub.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? finnhub
+        guard let url = URL(string: "\(finnhubBase)/quote?symbol=\(encoded)&token=\(apiKey)") else { return nil }
         do {
             let (data, _) = try await session.data(from: url)
-            let response  = try JSONDecoder().decode(YahooChartResponse.self, from: data)
-            guard let meta = response.chart.result?.first?.meta,
-                  let currentPrice = meta.regularMarketPrice else { return nil }
+            let q = try JSONDecoder().decode(FinnhubQuote.self, from: data)
+            guard q.c > 0 else { return nil }
             return AssetQuote(
-                currentPrice:  currentPrice,
-                previousClose: meta.previousClose ?? meta.chartPreviousClose,
-                currencyCode:  meta.currency ?? "USD",
-                sector:        nil,
-                preMarketPrice: meta.preMarketPrice,
-                postMarketPrice: meta.postMarketPrice
+                currentPrice:   q.c,
+                previousClose:  q.pc > 0 ? q.pc : nil,
+                currencyCode:   currency,
+                sector:         nil,
+                preMarketPrice: nil,
+                postMarketPrice: nil
             )
         } catch {
             return nil
         }
     }
 
-    private func fetchSector(symbol: String) async -> String? {
-        guard let url = URL(string: "https://query1.finance.yahoo.com/v10/finance/quoteSummary/\(symbol)?modules=assetProfile") else { return nil }
-        guard let (data, _) = try? await session.data(from: url) else { return nil }
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let result = (json["quoteSummary"] as? [String: Any])?["result"] as? [[String: Any]],
-              let profile = result.first?["assetProfile"] as? [String: Any],
-              let sector = profile["sector"] as? String,
-              !sector.isEmpty else { return nil }
-        return sector
-    }
-
-    private func searchYahoo(query: String) async -> [AssetSearchResult] {
+    private func searchFinnhub(query: String) async -> [AssetSearchResult] {
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        guard let url = URL(string: "https://query1.finance.yahoo.com/v1/finance/search?q=\(encoded)&quotesCount=8&lang=en-US") else { return [] }
+        guard let url = URL(string: "\(finnhubBase)/search?q=\(encoded)&token=\(apiKey)") else { return [] }
         do {
             let (data, _) = try await session.data(from: url)
-            let response  = try JSONDecoder().decode(YahooSearchResponse.self, from: data)
-            return response.quotes.compactMap { quote in
-                guard let symbol    = quote.symbol,
-                      let name      = quote.shortname ?? quote.longname,
-                      let quoteType = quote.quoteType,
-                      quoteType == "EQUITY" || quoteType == "ETF"
-                else { return nil }
-                let type: AssetType = quoteType == "ETF" ? .etf : .stock
-                return AssetSearchResult(symbol: symbol, name: name, assetType: type, coinGeckoId: "", market: quote.exchDisp, marketRank: nil)
+            let response  = try JSONDecoder().decode(FinnhubSearchResponse.self, from: data)
+            return response.result.prefix(8).compactMap { item in
+                guard item.type == "Common Stock" || item.type == "ETP" else { return nil }
+                let assetType: AssetType = item.type == "ETP" ? .etf : .stock
+                let isASX = item.displaySymbol.contains(".")
+                    && item.displaySymbol.uppercased().hasSuffix(".AX")
+                let market: String? = isASX ? "ASX" : nil
+                return AssetSearchResult(
+                    symbol: item.displaySymbol,
+                    name: item.description,
+                    assetType: assetType,
+                    coinGeckoId: "",
+                    market: market,
+                    marketRank: nil
+                )
             }
         } catch { return [] }
     }
@@ -167,7 +154,14 @@ final class PriceService: PriceServiceProtocol {
             for (geckoId, priceMap) in decoded {
                 guard let symbol = geckoIdToSymbol[geckoId], let price = priceMap.usd else { continue }
                 let previousClose: Double? = priceMap.usd24hChange.map { price / (1 + $0 / 100) }
-                result[symbol] = AssetQuote(currentPrice: price, previousClose: previousClose, currencyCode: "USD", sector: nil, preMarketPrice: nil, postMarketPrice: nil)
+                result[symbol] = AssetQuote(
+                    currentPrice:   price,
+                    previousClose:  previousClose,
+                    currencyCode:   "USD",
+                    sector:         nil,
+                    preMarketPrice: nil,
+                    postMarketPrice: nil
+                )
             }
             return result
         } catch { return [:] }
@@ -182,29 +176,37 @@ final class PriceService: PriceServiceProtocol {
             return response.coins
                 .sorted { ($0.marketCapRank ?? .max) < ($1.marketCapRank ?? .max) }
                 .prefix(5)
-                .map { AssetSearchResult(symbol: $0.symbol.uppercased(), name: $0.name, assetType: .crypto, coinGeckoId: $0.id, market: nil, marketRank: $0.marketCapRank) }
+                .map {
+                    AssetSearchResult(
+                        symbol: $0.symbol.uppercased(),
+                        name: $0.name,
+                        assetType: .crypto,
+                        coinGeckoId: $0.id,
+                        market: nil,
+                        marketRank: $0.marketCapRank
+                    )
+                }
         } catch { return [] }
     }
 }
 
-// MARK: - Response Models
+// MARK: - Response models
 
-private struct YahooChartResponse: Decodable { let chart: YahooChart }
-private struct YahooChart: Decodable { let result: [YahooChartResult]? }
-private struct YahooChartResult: Decodable { let meta: YahooMeta }
-private struct YahooMeta: Decodable {
-    let regularMarketPrice: Double?
-    let previousClose: Double?
-    let chartPreviousClose: Double?
-    let currency: String?
-    let preMarketPrice: Double?
-    let postMarketPrice: Double?
+private struct FinnhubQuote: Decodable {
+    let c: Double   // current price
+    let pc: Double  // previous close
 }
-private struct YahooSearchResponse: Decodable { let quotes: [YahooQuote] }
-private struct YahooQuote: Decodable {
-    let symbol: String?; let shortname: String?; let longname: String?
-    let quoteType: String?; let exchDisp: String?
+
+private struct FinnhubSearchResponse: Decodable {
+    let result: [FinnhubSearchItem]
 }
+
+private struct FinnhubSearchItem: Decodable {
+    let description: String
+    let displaySymbol: String
+    let type: String
+}
+
 private struct CoinGeckoSearchResponse: Decodable { let coins: [CoinGeckoCoin] }
 private struct CoinGeckoCoin: Decodable {
     let id: String; let symbol: String; let name: String; let marketCapRank: Int?

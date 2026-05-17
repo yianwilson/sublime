@@ -31,6 +31,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Folio/Folio.entitlements
         ENABLE_PREVIEWS: YES
     dependencies:
       - target: FolioWidget
@@ -63,8 +64,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.folio.app.widget
         SWIFT_VERSION: "5.9"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        INFOPLIST_FILE: FolioWidget/Info.plist
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
