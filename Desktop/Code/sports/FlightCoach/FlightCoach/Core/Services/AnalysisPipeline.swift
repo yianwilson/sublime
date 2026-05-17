@@ -47,6 +47,7 @@ final class AnalysisPipeline: ObservableObject {
             let contactHint = session.effectiveContactFrameIndex
             let ballTrackPoints = await BallTrackingService.shared.trackBall(
                 in: frames,
+                poseFrames: poseFrames,
                 contactFrameHint: contactHint
             ) { [weak self] p in
                 Task { @MainActor in self?.progress = .trackingBall(p) }
