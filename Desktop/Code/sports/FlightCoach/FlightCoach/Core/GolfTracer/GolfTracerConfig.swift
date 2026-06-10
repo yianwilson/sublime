@@ -14,9 +14,17 @@ struct GolfTracerConfig {
     var impactLocalMotionRoiPx4K: CGFloat = 120
 
     // Initial launch
-    var initialLaunchFrameCount: Int = 8
+    // 14 frames: long enough that the ball (persistent, decelerating) accumulates
+    // more chain points than the club shaft, which crosses the launch corridor
+    // fast and exits within ~4 frames.
+    var initialLaunchFrameCount: Int = 14
     var maxInitialMissingFrames: Int = 2
-    var maxCandidatesPerFrame: Int = 8
+    // Post-impact body/club motion can produce 8+ strong movers on its own;
+    // the fainter ball must still make the list for the selector to find it.
+    var maxCandidatesPerFrame: Int = 16
+    // Apparent ball speed never grows >~1.35x per step after launch (it decays);
+    // chains of unrelated noise blobs tend to accelerate. dt-normalised.
+    var launchMaxStepSpeedRatio: CGFloat = 1.35
 
     // Search radii at 4K 120 fps baseline (impact+1 … impact+8)
     var launchSearchRadiiPx4K120: [CGFloat] = [40, 80, 140, 220, 320, 450, 600, 760]
@@ -27,7 +35,9 @@ struct GolfTracerConfig {
     // Physical gates
     var maxAngleChangeDegreesLocked: CGFloat = 60
     var maxAngleChangeDegreesTemporarilyLost: CGFloat = 75
-    var minSpeedRatio: CGFloat = 0.25
+    // A receding ball's apparent speed can drop to ~0.15x between sparse track
+    // points (perspective deceleration); 0.25 rejected the real ball mid-flight.
+    var minSpeedRatio: CGFloat = 0.12
     var maxSpeedRatio: CGFloat = 2.5
     var minForwardDotLocked: CGFloat = 0.05
 

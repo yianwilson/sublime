@@ -6,9 +6,13 @@ import CoreGraphics
 struct VelocityPredictor {
     var position: CGPoint
     var velocity: CGVector
+    /// Per-frame apparent-speed decay. A ball receding from the camera decelerates
+    /// strongly in pixel terms (≈0.85×/frame at 30fps), so linear extrapolation
+    /// overshoots and the search ROI leaves the real ball behind.
+    var damping: CGFloat = 1.0
 
     func predicted(dt: CGFloat = 1) -> CGPoint {
-        CGPoint(x: position.x + velocity.dx * dt, y: position.y + velocity.dy * dt)
+        CGPoint(x: position.x + velocity.dx * damping * dt, y: position.y + velocity.dy * damping * dt)
     }
 
     mutating func update(measurement: CGPoint, dt: CGFloat = 1) {
@@ -87,8 +91,11 @@ enum LaunchTrackSelector {
                                       fps: Double,
                                       config: GolfTracerConfig) -> TracerTrack? {
         let frames = (1...config.initialLaunchFrameCount).map { impactFrame + $0 }
+        // Seed from EVERY launch frame: at 30-60fps the ball has left the first
+        // two frames' small ROIs before they're even searched, so restricting
+        // seeds to impact+1/+2 guarantees only club/noise hypotheses.
         var seeds: [TracerCandidate] = []
-        for f in frames.prefix(2) { seeds.append(contentsOf: candidatesByFrame[f] ?? []) }
+        for f in frames { seeds.append(contentsOf: candidatesByFrame[f] ?? []) }
         guard !seeds.isEmpty else { return nil }
 
         var best: (track: TracerTrack, score: Double)?
@@ -117,9 +124,15 @@ enum LaunchTrackSelector {
             TracerTrackPoint(frameIndex: impactFrame, position: addressBall, confidence: 1.0, source: .manualTap, isPredictedOnly: false),
             TracerTrackPoint(frameIndex: seed.frameIndex, position: seed.position, confidence: seed.visualScore, source: seed.source, isPredictedOnly: false)
         ]
-        var predictor = VelocityPredictor(position: seed.position,
-                                          velocity: TracerGeometry.vector(from: addressBall, to: seed.position))
+        // Per-frame velocity: the seed may be several frames after impact, so the
+        // address→seed displacement must be divided by the elapsed frames.
+        let seedDt = CGFloat(max(1, seed.frameIndex - impactFrame))
         let launchDir = TracerGeometry.vector(from: addressBall, to: seed.position)
+        let damping = CGFloat(pow(0.85, 30.0 / max(fps, 1)))
+        var predictor = VelocityPredictor(
+            position: seed.position,
+            velocity: CGVector(dx: launchDir.dx / seedDt, dy: launchDir.dy / seedDt),
+            damping: damping)
         var missing = 0
         var score = seed.visualScore + Double(TracerGeometry.norm(launchDir)) * 0.001
 
@@ -129,12 +142,20 @@ enum LaunchTrackSelector {
             let radius = TracerGeometry.effectiveRadius(basePx4K120: baseRadius, width: width, height: height, fps: fps)
             let predicted = predictor.predicted()
 
+            let last = points[points.count - 1]
+            let prev = points[points.count - 2]
+            let lastSpeed = TracerGeometry.norm(TracerGeometry.vector(from: prev.position, to: last.position))
+                / CGFloat(max(1, last.frameIndex - prev.frameIndex))
+            let newDt = CGFloat(max(1, f - last.frameIndex))
+
             let plausible = (candidatesByFrame[f] ?? []).filter {
-                TracerAssociation.passesHardGates(candidate: $0.position,
-                                                  trackPositions: points.map(\.position),
-                                                  launchDirection: launchDir,
-                                                  predicted: predicted, searchRadius: radius,
-                                                  locked: true, config: config)
+                guard TracerAssociation.passesHardGates(candidate: $0.position,
+                                                        trackPositions: points.map(\.position),
+                                                        launchDirection: launchDir,
+                                                        predicted: predicted, searchRadius: radius,
+                                                        locked: true, config: config) else { return false }
+                let stepSpeed = TracerGeometry.norm(TracerGeometry.vector(from: last.position, to: $0.position)) / newDt
+                return lastSpeed <= 0 || stepSpeed <= lastSpeed * config.launchMaxStepSpeedRatio
             }
             if let pick = plausible.max(by: {
                 TracerAssociation.score(candidate: $0, previous: predictor.position, predicted: predicted, launchDirection: launchDir, searchRadius: radius)
@@ -198,9 +219,12 @@ enum BallTracker {
         var points = initial.points
         guard points.count >= 2, let lastReal = points.last else { return initial }
 
+        let stepDt = CGFloat(max(1, lastReal.frameIndex - points[points.count - 2].frameIndex))
+        let stepVec = TracerGeometry.vector(from: points[points.count - 2].position, to: lastReal.position)
         var predictor = VelocityPredictor(
             position: lastReal.position,
-            velocity: TracerGeometry.vector(from: points[points.count - 2].position, to: lastReal.position))
+            velocity: CGVector(dx: stepVec.dx / stepDt, dy: stepVec.dy / stepDt),
+            damping: CGFloat(pow(0.85, 30.0 / max(fps, 1))))
         let launchDir = TracerGeometry.vector(from: points.first!.position, to: lastReal.position)
 
         var missing = 0

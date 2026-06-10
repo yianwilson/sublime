@@ -53,8 +53,10 @@
 		7CD7D4FFA09991F96364DDD6 /* PoseDebugResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0E8E45CA4EC281F8496681 /* PoseDebugResult.swift */; };
 		84E7CFCF0B0F6B8B9961CF51 /* BallDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3933BF08A8EC1607FF3A6168 /* BallDetector.swift */; };
 		8837102B7D126D9BBAC8846D /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62DB1816CD6EC3A5CB17745F /* CoreML.framework */; };
+		887F83835027FAF8BD2B3AC1 /* IMG_4935.MOV in Resources */ = {isa = PBXBuildFile; fileRef = 3096C0B52263262810E08551 /* IMG_4935.MOV */; };
 		8B266F98BB48969F69C8D166 /* IMG_4165.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 961CDAD74A39C1F90B601806 /* IMG_4165.mp4 */; };
 		90576A54987A90A64A87F5C0 /* GolfAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C8848FDD59ABC2F4BB59E5 /* GolfAnalysisService.swift */; };
+		90F996997E9480DC4EB0CF46 /* TracerGroundTruthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4774731EF09B3F7384A3DC29 /* TracerGroundTruthTests.swift */; };
 		A67FFBE123BDCE8C6A241B3E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78759410E08F12E42327BFD /* ContentView.swift */; };
 		A9429444894575F13333C65E /* ContactDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91E8276C5F1381C89B41EE2 /* ContactDetectionService.swift */; };
 		ABCFCB45AF267D0FDD5656F3 /* SessionHistoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD02556ECE22E35D4A748372 /* SessionHistoryScreen.swift */; };
@@ -106,6 +108,7 @@
 		251D7A1C77826C593126B0C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2A8D04DE52A6950841A10BC8 /* CoreMLBallDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLBallDetector.swift; sourceTree = "<group>"; };
 		302181669AD569DB369D9F5A /* TrainingDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDataService.swift; sourceTree = "<group>"; };
+		3096C0B52263262810E08551 /* IMG_4935.MOV */ = {isa = PBXFileReference; path = IMG_4935.MOV; sourceTree = "<group>"; };
 		30B14E222F5CA75436A19856 /* GolfTracerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfTracerModels.swift; sourceTree = "<group>"; };
 		3388BE38556D44B2B809C244 /* AnalysisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisModels.swift; sourceTree = "<group>"; };
 		35D884B6874F31C48DFED693 /* AnalysisPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisPipeline.swift; sourceTree = "<group>"; };
@@ -113,6 +116,7 @@
 		3B22BCF218E3F1A6C2C0F5BA /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
 		461E6369F874502914F2D07A /* OverlayRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRenderer.swift; sourceTree = "<group>"; };
 		46D9B4193198D5AF41E58763 /* TennisAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TennisAnalysisService.swift; sourceTree = "<group>"; };
+		4774731EF09B3F7384A3DC29 /* TracerGroundTruthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracerGroundTruthTests.swift; sourceTree = "<group>"; };
 		4AB4E8504AEC502E7435CF2D /* BallTrackingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BallTrackingService.swift; sourceTree = "<group>"; };
 		4BBF2C3FAAF3809881F392DB /* TracerGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracerGeometry.swift; sourceTree = "<group>"; };
 		5A578848BB1E08D0AFA393E7 /* PoseDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseDetectionService.swift; sourceTree = "<group>"; };
@@ -217,6 +221,7 @@
 			isa = PBXGroup;
 			children = (
 				961CDAD74A39C1F90B601806 /* IMG_4165.mp4 */,
+				3096C0B52263262810E08551 /* IMG_4935.MOV */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -279,6 +284,7 @@
 			children = (
 				E64288006BEBC2D0E69FAF47 /* LaunchTrackerTests.swift */,
 				E1574F3F606604EEF29B43A6 /* TracerGeometryTests.swift */,
+				4774731EF09B3F7384A3DC29 /* TracerGroundTruthTests.swift */,
 				C317D7D0507CF64C2BF5D39D /* TracerIntegrationTests.swift */,
 				985AD13B771B42AE53F9A8A6 /* TrackValidatorTests.swift */,
 				27A27C2DE2148A0231385C23 /* Resources */,
@@ -560,6 +566,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8B266F98BB48969F69C8D166 /* IMG_4165.mp4 in Resources */,
+				887F83835027FAF8BD2B3AC1 /* IMG_4935.MOV in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -589,6 +596,7 @@
 			files = (
 				1A8723F174A735D58B952141 /* LaunchTrackerTests.swift in Sources */,
 				6E25EC8989866E985537661E /* TracerGeometryTests.swift in Sources */,
+				90F996997E9480DC4EB0CF46 /* TracerGroundTruthTests.swift in Sources */,
 				EC97665502021F7854477DFB /* TracerIntegrationTests.swift in Sources */,
 				465B4B40518DB4A1EB17612B /* TrackValidatorTests.swift in Sources */,
 			);

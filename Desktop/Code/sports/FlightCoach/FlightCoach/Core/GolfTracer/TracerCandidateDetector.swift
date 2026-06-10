@@ -31,14 +31,17 @@ enum TracerCandidateDetector {
             candidates.append(contentsOf: staticBallCandidates(cur, frame: frame, roi: roi))
         }
 
-        // The ball is the thing that MOVES and CONTRASTS with its local background — not the
-        // brightest blob. Rank by motion + local contrast, roundness as a tiebreaker.
+        // The ball is the thing that MOVES. Motion blobs get priority slots — even a
+        // faint mover (low diff after downscaling) outranks bright static texture,
+        // which otherwise fills every slot and starves the launch selector.
         func rank(_ c: TracerCandidate) -> Double { c.motionScore + c.brightnessScore + 0.3 * c.visualScore }
-        return candidates
-            .filter { ($0.motionScore + $0.brightnessScore) >= 0.12 }
+        let movers = candidates
+            .filter { $0.source == .frameDifference && $0.motionScore >= 0.04 }
             .sorted { rank($0) > rank($1) }
-            .prefix(config.maxCandidatesPerFrame)
-            .map { $0 }
+        let statics = candidates
+            .filter { $0.source != .frameDifference && ($0.motionScore + $0.brightnessScore) >= 0.12 }
+            .sorted { rank($0) > rank($1) }
+        return Array((movers + statics).prefix(config.maxCandidatesPerFrame))
     }
 
     // MARK: - Static ball detection (address, stalls)
@@ -158,7 +161,10 @@ enum TracerCandidateDetector {
         }
         diffs.sort()
         let p75 = diffs[Int(Double(diffs.count) * 0.75)]
-        let motionThreshold = max(40, min(80, p75 + 25))  // adaptive, but bounded
+        // Floor of 18 (summed RGB): a small receding ball downscaled to ~1280px
+        // long-edge produces frame diffs of only ~20-60; the old floor of 40
+        // erased it entirely and the launch window saw pure static noise.
+        let motionThreshold = max(18, min(80, p75 + 25))
 
         var mask = [Bool](repeating: false, count: cur.width * cur.height)
         var value = [Float](repeating: 0, count: cur.width * cur.height)
