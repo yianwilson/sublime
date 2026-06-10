@@ -38,12 +38,59 @@ def ffprobe_meta(video):
     return w, h, fps
 
 
+def find_impact(video, w, h):
+    """Coarse YOLO sweep: the teed ball is a sports-ball detection that sits
+    still across consecutive samples; impact is the last sample it's present."""
+    from ultralytics import YOLO
+    dur = float(subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "csv=p=0", str(video)], capture_output=True, text=True).stdout.strip())
+    tmp = Path("/tmp/autolabel_coarse")
+    tmp.mkdir(exist_ok=True)
+    for old in tmp.glob("*.png"):
+        old.unlink()
+    step = 0.3
+    times = [round(t, 2) for t in
+             [step * i for i in range(1, int(dur / step) - 1)]]
+    for i, t in enumerate(times):
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", f"{t:.3f}", "-i", str(video),
+                        "-frames:v", "1", str(tmp / f"c{i:03d}.png")], check=True)
+    model = YOLO("yolov8x.pt")
+    hits = defaultdict(list)   # position cell -> [sample indices]
+    for i in range(len(times)):
+        r = model.predict(str(tmp / f"c{i:03d}.png"), classes=[32],
+                          conf=0.12, imgsz=1920, verbose=False)[0]
+        for b in r.boxes:
+            x, y = float(b.xywh[0][0]), float(b.xywh[0][1])
+            if y < h * 0.35:
+                continue
+            hits[(int(x) // 100, int(y) // 100)].append(i)
+    best = None
+    for cell, idxs in hits.items():
+        runs = sorted(set(idxs))
+        if len(runs) < 3:
+            continue
+        # longest consecutive run = ball sitting still
+        longest, cur, last_idx = 1, 1, runs[0]
+        end = runs[0]
+        for j in runs[1:]:
+            cur = cur + 1 if j == last_idx + 1 else 1
+            if cur >= longest:
+                longest, end = cur, j
+            last_idx = j
+        if longest >= 3 and (best is None or longest > best[0]):
+            best = (longest, end)
+    if best is None:
+        return None
+    return times[best[1]]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("video")
     ap.add_argument("--out", default="VisionLab/datasets/ball-v1")
-    ap.add_argument("--impact-sec", type=float, required=True,
-                    help="approx impact time in FFMPEG timeline (player time may differ ~0.5s on iPhone MOVs)")
+    ap.add_argument("--impact-sec", type=float, default=None,
+                    help="approx impact time in FFMPEG timeline; omit for auto-detection")
     ap.add_argument("--span", type=float, default=0.6)
     ap.add_argument("--conf", type=float, default=0.03)
     args = ap.parse_args()
@@ -54,6 +101,12 @@ def main():
     out = Path(args.out)
     w, h, fps = ffprobe_meta(video)
     print(f"{video.name}: {w}x{h} @{fps:.0f}fps")
+
+    if args.impact_sec is None:
+        args.impact_sec = find_impact(video, w, h)
+        if args.impact_sec is None:
+            sys.exit("auto-impact failed: no persistent teed ball found — pass --impact-sec")
+        print(f"auto impact: teed ball last seen at {args.impact_sec:.2f}s")
 
     # Extract dense frames starting slightly BEFORE impact so the teed ball anchors the chain.
     tmp = Path("/tmp/autolabel_yolo")
