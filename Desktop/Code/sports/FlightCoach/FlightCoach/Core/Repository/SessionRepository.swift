@@ -22,6 +22,9 @@ final class SessionRepository: ObservableObject {
         if let videoPath = session.videoLocalPath {
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: videoPath))
         }
+        if let processedPath = session.processedVideoLocalPath {
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: processedPath))
+        }
         if let thumbPath = session.thumbnailLocalPath {
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: thumbPath))
         }

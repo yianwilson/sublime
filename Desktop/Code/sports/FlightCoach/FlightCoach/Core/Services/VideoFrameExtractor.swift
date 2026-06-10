@@ -14,6 +14,13 @@ final class VideoFrameExtractor {
     let totalFrames: Int
     let duration: TimeInterval
 
+    /// Frames are rendered down to this max long-edge and copied into a small bitmap
+    /// at extraction time. This both caps memory (a 4K clip would otherwise hold
+    /// hundreds of ~33 MB buffers → OOM crash) and releases the source pixel buffer.
+    /// Pose and ball detection don't benefit from more than ~1080p here.
+    private let maxLongEdge: CGFloat = 1280
+    private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+
     private init(asset: AVURLAsset, frameRate: Double, totalFrames: Int, duration: TimeInterval) {
         self.asset = asset
         self.frameRate = frameRate
@@ -30,7 +37,8 @@ final class VideoFrameExtractor {
             throw FrameExtractorError.noVideoTrack
         }
 
-        let frameRate = Double(try await track.load(.nominalFrameRate))
+        let nominalFrameRate = Double(try await track.load(.nominalFrameRate))
+        let frameRate = nominalFrameRate > 0 ? nominalFrameRate : 30
         let totalFrames = Int(duration * frameRate)
 
         return VideoFrameExtractor(
@@ -67,15 +75,20 @@ final class VideoFrameExtractor {
 
         var frames: [VideoFrame] = []
         var frameIndex = 0
-        let lowerBound = frameRange?.lowerBound ?? 0
-        let upperBound = frameRange?.upperBound ?? totalFrames
+        let sampleStride = max(1, stride)
+        let lowerBound = max(0, frameRange?.lowerBound ?? 0)
+        let upperBound = min(frameRange?.upperBound ?? (totalFrames - 1), totalFrames - 1)
+        guard lowerBound <= upperBound else {
+            onProgress?(1.0)
+            return []
+        }
         let expectedFrames = max(1, upperBound - lowerBound + 1)
 
         while let sampleBuffer = output.copyNextSampleBuffer() {
             defer { frameIndex += 1 }
             if frameIndex < lowerBound { continue }
             if frameIndex > upperBound { break }
-            guard frameIndex % stride == 0 else { continue }
+            guard (frameIndex - lowerBound) % sampleStride == 0 else { continue }
 
             let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             let timestamp = pts.seconds
@@ -89,6 +102,7 @@ final class VideoFrameExtractor {
             onProgress?(min(progress, 1.0))
         }
 
+        onProgress?(1.0)
         return frames
     }
 
@@ -155,10 +169,27 @@ final class VideoFrameExtractor {
     }
 
     private func displayOrientedImage(_ image: CIImage, preferredTransform: CGAffineTransform) -> CIImage {
-        let transformed = image.transformed(by: preferredTransform)
+        var transformed = image.transformed(by: preferredTransform)
         let extent = transformed.extent
-        guard extent.origin != .zero else { return transformed }
-        return transformed.transformed(by: CGAffineTransform(translationX: -extent.origin.x, y: -extent.origin.y))
+        if extent.origin != .zero {
+            transformed = transformed.transformed(by: CGAffineTransform(translationX: -extent.origin.x, y: -extent.origin.y))
+        }
+
+        // Downscale to the working resolution and copy into a compact bitmap. Rendering
+        // to a CGImage forces a decode at the smaller size and releases the source 4K
+        // pixel buffer — making a 4K clip memory-equivalent to a 720p one.
+        let bounds = transformed.extent
+        let longEdge = max(bounds.width, bounds.height)
+        let scaled = longEdge > maxLongEdge
+            ? transformed.transformed(by: CGAffineTransform(scaleX: maxLongEdge / longEdge, y: maxLongEdge / longEdge))
+            : transformed
+
+        let rect = scaled.extent
+        guard rect.width > 0, rect.height > 0,
+              let cg = ciContext.createCGImage(scaled, from: rect) else {
+            return scaled
+        }
+        return CIImage(cgImage: cg)
     }
 }
 

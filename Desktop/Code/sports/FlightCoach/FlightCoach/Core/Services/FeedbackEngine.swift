@@ -30,7 +30,6 @@ final class FeedbackEngine {
         items += spineAngleFeedback(metrics: metrics)
         items += hipSwayFeedback(metrics: metrics)
         items += balanceFeedback(metrics: metrics)
-        items += ballSpeedFeedback(metrics: metrics)
         items += shotShapeFeedback(shape: shotShape, confidence: shotShapeConfidence, cameraAngle: cameraAngle)
 
         return items
@@ -94,15 +93,6 @@ final class FeedbackEngine {
         } else {
             return [FeedbackItem(title: "Strong Finish", detail: "Balance of \(metric.displayValue) at finish — well controlled.", severity: .positive, confidence: metric.confidence, metricName: "Balance at Finish")]
         }
-    }
-
-    private func ballSpeedFeedback(metrics: [AnalysisMetric]) -> [FeedbackItem] {
-        guard let metric = metrics.first(where: { $0.name == "Ball Speed" }) else { return [] }
-        guard metric.displayValue != "Unknown" else {
-            return [FeedbackItem(title: "Ball Speed Unknown", detail: "Ball speed needs a stable launch track. The current trail is too weak or ambiguous to estimate speed.", severity: .info, confidence: metric.confidence, metricName: "Ball Speed")]
-        }
-        let qualifier = metric.isLowConfidence ? "rough estimate" : "estimate"
-        return [FeedbackItem(title: "Ball Speed", detail: "\(metric.displayValue) \(qualifier) from image-space launch movement. Use a launch monitor for measured speed.", severity: .info, confidence: metric.confidence, metricName: "Ball Speed")]
     }
 
     private func shotShapeFeedback(shape: ShotShape, confidence: Float, cameraAngle: CameraAngle) -> [FeedbackItem] {

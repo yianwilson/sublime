@@ -5,7 +5,7 @@ struct HomeScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PracticeSession.createdAt, order: .reverse) private var recentSessions: [PracticeSession]
 
-    @State private var showSportSelect = false
+    @State private var showSetup = false
     @State private var showHistory = false
 
     var body: some View {
@@ -25,8 +25,8 @@ struct HomeScreen: View {
             }
             .navigationTitle("")
             .navigationBarHidden(true)
-            .sheet(isPresented: $showSportSelect) {
-                SportSelectScreen()
+            .navigationDestination(isPresented: $showSetup) {
+                SessionSetupScreen(sport: .golf)
             }
             .navigationDestination(isPresented: $showHistory) {
                 SessionHistoryScreen()
@@ -73,7 +73,7 @@ struct HomeScreen: View {
                 .multilineTextAlignment(.center)
 
             Button {
-                showSportSelect = true
+                showSetup = true
             } label: {
                 Label("Start New Session", systemImage: "plus.circle.fill")
                     .font(.headline)

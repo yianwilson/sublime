@@ -5,60 +5,129 @@ import CoreImage
 final class PoseDetectionService {
     static let shared = PoseDetectionService()
 
+    var minimumLandmarkConfidence: Float = 0.20
+
     private init() {}
 
-    func detectPose(in image: CIImage, frameIndex: Int, timestamp: TimeInterval) throws -> PoseFrame? {
-        let request = VNDetectHumanBodyPoseRequest()
-        // VNImageRequestHandler is correct for per-frame detection.
-        // VNSequenceRequestHandler is only for tracking requests across frames.
-        let handler = VNImageRequestHandler(ciImage: image, orientation: .up, options: [:])
-        try handler.perform([request])
+    func detectPose(
+        in image: CIImage,
+        frameIndex: Int,
+        timestamp: TimeInterval
+    ) -> (frame: PoseFrame?, debug: PoseDebugResult) {
+        let imageWidth  = Int(image.extent.width)
+        let imageHeight = Int(image.extent.height)
 
-        guard let observation = request.results?.first else {
-            return nil
+        let request = VNDetectHumanBodyPoseRequest()
+        let handler = VNImageRequestHandler(ciImage: image, orientation: .up, options: [:])
+
+        do {
+            try handler.perform([request])
+        } catch {
+            let debug = PoseDebugResult(
+                frameIndex: frameIndex, timestamp: timestamp,
+                imageWidth: imageWidth, imageHeight: imageHeight,
+                landmarkCount: 0, averageConfidence: 0,
+                detectedJointNames: [], errorMessage: error.localizedDescription,
+                didDetectPose: false
+            )
+            return (nil, debug)
         }
 
-        let recognizedPoints = try observation.recognizedPoints(.all)
-        var landmarks: [PoseLandmark] = []
+        guard let observation = request.results?.first else {
+            let debug = PoseDebugResult(
+                frameIndex: frameIndex, timestamp: timestamp,
+                imageWidth: imageWidth, imageHeight: imageHeight,
+                landmarkCount: 0, averageConfidence: 0,
+                detectedJointNames: [], errorMessage: nil,
+                didDetectPose: false
+            )
+            return (nil, debug)
+        }
 
-        for (key, point) in recognizedPoints {
-            guard point.confidence > 0.2 else { continue }
+        let recognizedPoints: [VNHumanBodyPoseObservation.JointName: VNRecognizedPoint]
+        do {
+            recognizedPoints = try observation.recognizedPoints(.all)
+        } catch {
+            let debug = PoseDebugResult(
+                frameIndex: frameIndex, timestamp: timestamp,
+                imageWidth: imageWidth, imageHeight: imageHeight,
+                landmarkCount: 0, averageConfidence: 0,
+                detectedJointNames: [], errorMessage: "recognizedPoints failed: \(error.localizedDescription)",
+                didDetectPose: true
+            )
+            return (nil, debug)
+        }
+
+        var landmarks: [PoseLandmark] = []
+        var detectedJointNames: [String] = []
+
+        for (jointName, point) in recognizedPoints {
+            let nameString = jointName.rawValue.rawValue
+            detectedJointNames.append(nameString)
+            guard point.confidence >= minimumLandmarkConfidence else { continue }
             landmarks.append(PoseLandmark(
-                jointName: key.rawValue.rawValue,
+                jointName: nameString,
                 x: Float(point.location.x),
                 y: Float(point.location.y),
                 confidence: point.confidence
             ))
         }
 
-        guard !landmarks.isEmpty else { return nil }
+        let avgConfidence = landmarks.isEmpty ? 0 : landmarks.map(\.confidence).reduce(0, +) / Float(landmarks.count)
 
-        let overallConfidence = landmarks.map(\.confidence).reduce(0, +) / Float(landmarks.count)
+        let debug = PoseDebugResult(
+            frameIndex: frameIndex, timestamp: timestamp,
+            imageWidth: imageWidth, imageHeight: imageHeight,
+            landmarkCount: landmarks.count,
+            averageConfidence: avgConfidence,
+            detectedJointNames: detectedJointNames,
+            errorMessage: nil,
+            didDetectPose: true
+        )
 
-        return PoseFrame(
+        guard !landmarks.isEmpty else {
+            return (nil, debug)
+        }
+
+        let frame = PoseFrame(
             frameIndex: frameIndex,
             timestamp: timestamp,
             landmarks: landmarks,
-            overallConfidence: overallConfidence
+            overallConfidence: avgConfidence
         )
+        return (frame, debug)
     }
 
     func detectPoses(
         in frames: [VideoFrame],
         onProgress: ((Double) -> Void)? = nil
-    ) async throws -> [PoseFrame] {
-        var results: [PoseFrame] = []
+    ) async -> (poseFrames: [PoseFrame], debugResults: [PoseDebugResult]) {
+        var poseFrames: [PoseFrame] = []
+        var debugResults: [PoseDebugResult] = []
 
         for (idx, frame) in frames.enumerated() {
-            if let poseFrame = try? detectPose(in: frame.image, frameIndex: frame.index, timestamp: frame.timestamp) {
-                results.append(poseFrame)
+            let (poseFrame, debug) = detectPose(in: frame.image, frameIndex: frame.index, timestamp: frame.timestamp)
+            if let poseFrame { poseFrames.append(poseFrame) }
+            debugResults.append(debug)
+
+#if DEBUG
+            if debug.failureReason != nil {
+                print("[Pose] frame \(frame.index): \(debug.failureReason!)")
             }
+#endif
+
             onProgress?(Double(idx + 1) / Double(frames.count))
-            // Yield periodically so the main actor stays responsive
             if idx % 10 == 0 { await Task.yield() }
         }
 
-        return results
+#if DEBUG
+        let detected = poseFrames.count
+        let total    = frames.count
+        let avgConf  = debugResults.filter { $0.didDetectPose }.map(\.averageConfidence).reduce(0, +) / Float(max(1, detected))
+        print("[Pose] \(detected)/\(total) frames with pose — avg confidence \(String(format: "%.0f%%", avgConf * 100))")
+#endif
+
+        return (poseFrames, debugResults)
     }
 }
 

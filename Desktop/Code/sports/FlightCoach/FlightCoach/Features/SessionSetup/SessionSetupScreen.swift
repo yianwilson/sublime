@@ -10,6 +10,7 @@ struct SessionSetupScreen: View {
 
     @State private var selectedMode: String = ""
     @State private var selectedAngle: CameraAngle = .faceOn
+    @State private var selectedHandedness: Handedness = .rightHanded
     @State private var showingVideoPicker = false
     @State private var showingCamera = false
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -37,6 +38,9 @@ struct SessionSetupScreen: View {
                 sportHeader
                 modeSection
                 angleSection
+                if sport == .golf {
+                    handednessSection
+                }
                 Divider().padding(.horizontal)
                 videoSourceSection
             }
@@ -113,6 +117,27 @@ struct SessionSetupScreen: View {
         }
     }
 
+    private var handednessSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Handedness", systemImage: "hand.raised")
+                .font(.headline)
+                .padding(.horizontal, 24)
+
+            Picker("Handedness", selection: $selectedHandedness) {
+                ForEach(Handedness.allCases) { hand in
+                    Text(hand.displayName).tag(hand)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 24)
+
+            Text("Used to anchor where the ball sits at address for more reliable detection.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 24)
+        }
+    }
+
     private var videoSourceSection: some View {
         VStack(spacing: 12) {
             Text("Add Video")
@@ -141,7 +166,7 @@ struct SessionSetupScreen: View {
             .padding(.horizontal, 24)
         }
         .sheet(isPresented: $showingCamera) {
-            CameraRecordingScreen(sport: sport, mode: selectedMode, angle: selectedAngle) { session in
+            CameraRecordingScreen(sport: sport, mode: selectedMode, angle: selectedAngle, handedness: selectedHandedness) { session in
                 navigateToSession = session
             }
         }
@@ -156,7 +181,7 @@ struct SessionSetupScreen: View {
             let tempURL = try await importManager.importVideo(from: item)
             let duration = await importManager.videoDuration(at: tempURL)
 
-            let session = PracticeSession(sport: sport, mode: selectedMode, cameraAngle: selectedAngle)
+            let session = PracticeSession(sport: sport, mode: selectedMode, cameraAngle: selectedAngle, handedness: selectedHandedness)
             session.durationSeconds = duration
 
             let savedURL = try await VideoStorageService.shared.copyVideoToLocal(from: tempURL, sessionId: session.id)

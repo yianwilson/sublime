@@ -22,6 +22,10 @@
     <string>FlightCoach needs access to your photo library to import practice videos.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>FlightCoach needs microphone access to record audio with your practice sessions.</string>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>

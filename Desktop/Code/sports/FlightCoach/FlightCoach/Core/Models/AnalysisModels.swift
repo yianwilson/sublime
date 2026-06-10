@@ -46,6 +46,18 @@ struct FeedbackItem: Codable, Identifiable, Equatable {
     var isLowConfidence: Bool { confidence < 0.5 }
 }
 
+struct PoseSummary: Codable, Equatable {
+    let detectedFrames: Int
+    let totalFrames: Int
+    let averageConfidence: Float
+
+    var detectionRate: Float { Float(detectedFrames) / Float(max(1, totalFrames)) }
+
+    var displaySummary: String {
+        "\(detectedFrames)/\(totalFrames) frames · avg \(Int(averageConfidence * 100))%"
+    }
+}
+
 struct GolfAnalysisResult: Codable, Equatable {
     let contactFrameIndex: Int
     let contactConfidence: Float
@@ -55,6 +67,7 @@ struct GolfAnalysisResult: Codable, Equatable {
     let metrics: [AnalysisMetric]
     let feedback: [FeedbackItem]
     let poseFrames: [PoseFrame]
+    var poseSummary: PoseSummary?
 }
 
 struct TennisAnalysisResult: Codable, Equatable {
@@ -64,6 +77,7 @@ struct TennisAnalysisResult: Codable, Equatable {
     let metrics: [AnalysisMetric]
     let feedback: [FeedbackItem]
     let poseFrames: [PoseFrame]
+    var poseSummary: PoseSummary?
 }
 
 enum AnalysisResult: Codable, Equatable {
@@ -118,13 +132,49 @@ struct ManualCorrection: Codable, Identifiable, Equatable {
     var correctedContactFrame: Int?
     var correctedShotType: String?
     var correctedCameraAngle: CameraAngle?
+    var correctedHandedness: Handedness?
+    var manualBallTrackPoints: [BallTrackPoint]
+    var manualTraceSeedFrame: Int?
     let correctedAt: Date
 
-    init(correctedContactFrame: Int? = nil, correctedShotType: String? = nil, correctedCameraAngle: CameraAngle? = nil) {
+    init(
+        correctedContactFrame: Int? = nil,
+        correctedShotType: String? = nil,
+        correctedCameraAngle: CameraAngle? = nil,
+        correctedHandedness: Handedness? = nil,
+        manualBallTrackPoints: [BallTrackPoint] = [],
+        manualTraceSeedFrame: Int? = nil
+    ) {
         self.id = UUID()
         self.correctedContactFrame = correctedContactFrame
         self.correctedShotType = correctedShotType
         self.correctedCameraAngle = correctedCameraAngle
+        self.correctedHandedness = correctedHandedness
+        self.manualBallTrackPoints = manualBallTrackPoints
+        self.manualTraceSeedFrame = manualTraceSeedFrame
         self.correctedAt = Date()
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case correctedContactFrame
+        case correctedShotType
+        case correctedCameraAngle
+        case correctedHandedness
+        case manualBallTrackPoints
+        case manualTraceSeedFrame
+        case correctedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        correctedContactFrame = try container.decodeIfPresent(Int.self, forKey: .correctedContactFrame)
+        correctedShotType = try container.decodeIfPresent(String.self, forKey: .correctedShotType)
+        correctedCameraAngle = try container.decodeIfPresent(CameraAngle.self, forKey: .correctedCameraAngle)
+        correctedHandedness = try container.decodeIfPresent(Handedness.self, forKey: .correctedHandedness)
+        manualBallTrackPoints = try container.decodeIfPresent([BallTrackPoint].self, forKey: .manualBallTrackPoints) ?? []
+        manualTraceSeedFrame = try container.decodeIfPresent(Int.self, forKey: .manualTraceSeedFrame)
+        correctedAt = try container.decodeIfPresent(Date.self, forKey: .correctedAt) ?? Date()
     }
 }

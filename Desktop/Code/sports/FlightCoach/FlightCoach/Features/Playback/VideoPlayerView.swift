@@ -1,21 +1,28 @@
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
 import AVKit
 
 struct VideoPlayerView: View {
     let session: PracticeSession
     let showOverlays: Bool
     let onFrameChange: ((Int) -> Void)?
+    let onTimeChange: ((TimeInterval) -> Void)?
 
     @StateObject private var coordinator = VideoPlayerCoordinator()
     @State private var currentFrameIndex: Int = 0
     @State private var showPoseOverlay: Bool = true
     @State private var showBallTrail: Bool = true
 
-    init(session: PracticeSession, showOverlays: Bool = true, onFrameChange: ((Int) -> Void)? = nil) {
+    init(
+        session: PracticeSession,
+        showOverlays: Bool = true,
+        onFrameChange: ((Int) -> Void)? = nil,
+        onTimeChange: ((TimeInterval) -> Void)? = nil
+    ) {
         self.session = session
         self.showOverlays = showOverlays
         self.onFrameChange = onFrameChange
+        self.onTimeChange = onTimeChange
     }
 
     var body: some View {
@@ -24,10 +31,6 @@ struct VideoPlayerView: View {
                 VideoPlayer(player: player)
                     .onAppear { player.play() }
                     .onDisappear { player.pause() }
-
-                if showOverlays {
-                    overlayControls
-                }
             } else {
                 Rectangle()
                     .fill(Color(.systemGray6))
@@ -40,6 +43,7 @@ struct VideoPlayerView: View {
         }
         .onAppear { coordinator.setup(session: session) }
         .onDisappear { coordinator.teardown() }
+        .onChange(of: coordinator.currentTime) { onTimeChange?(coordinator.currentTime) }
     }
 
     private var overlayControls: some View {
@@ -71,11 +75,21 @@ struct VideoPlayerView: View {
 @MainActor
 final class VideoPlayerCoordinator: ObservableObject {
     @Published var player: AVPlayer?
+    @Published var currentTime: TimeInterval = 0
+
+    private var timeObserver: Any?
 
     func setup(session: PracticeSession) {
         guard let url = VideoStorageService.shared.videoURL(for: session) else { return }
         let player = AVPlayer(url: url)
         self.player = player
+
+        let interval = CMTime(seconds: 0.04, preferredTimescale: 600)
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            Task { @MainActor in
+                self?.currentTime = time.seconds
+            }
+        }
 
         NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
@@ -88,6 +102,10 @@ final class VideoPlayerCoordinator: ObservableObject {
     }
 
     func teardown() {
+        if let observer = timeObserver, let player {
+            player.removeTimeObserver(observer)
+            timeObserver = nil
+        }
         player?.pause()
         player = nil
         NotificationCenter.default.removeObserver(self)

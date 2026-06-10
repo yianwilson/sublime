@@ -10,7 +10,8 @@ final class TennisAnalysisService {
         ballTrackPoints: [BallTrackPoint],
         contactFrameIndex: Int,
         contactConfidence: Float,
-        mode: TennisMode
+        mode: TennisMode,
+        poseSummary: PoseSummary? = nil
     ) -> TennisAnalysisResult {
         let metrics = computeMetrics(poseFrames: poseFrames, contactFrameIndex: contactFrameIndex, ballTrackPoints: ballTrackPoints)
         let feedback = FeedbackEngine.shared.tennisFeedback(
@@ -25,7 +26,8 @@ final class TennisAnalysisService {
             ballTrackPoints: ballTrackPoints,
             metrics: metrics,
             feedback: feedback,
-            poseFrames: poseFrames
+            poseFrames: poseFrames,
+            poseSummary: poseSummary
         )
     }
 

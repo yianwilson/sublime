@@ -6,6 +6,8 @@ enum SportType: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    static var publicBetaSports: [SportType] { [.golf] }
+
     var displayName: String {
         switch self {
         case .golf: return "Golf"
@@ -65,6 +67,27 @@ enum CameraAngle: String, Codable, CaseIterable, Identifiable {
 
     static var golfAngles: [CameraAngle] { [.downTheLine, .faceOn, .behindBallFlight] }
     static var tennisAngles: [CameraAngle] { [.faceOn, .downTheLine] }
+}
+
+enum Handedness: String, Codable, CaseIterable, Identifiable {
+    case rightHanded
+    case leftHanded
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .rightHanded: return "Right-handed"
+        case .leftHanded: return "Left-handed"
+        }
+    }
+
+    var shortName: String {
+        switch self {
+        case .rightHanded: return "RH"
+        case .leftHanded: return "LH"
+        }
+    }
 }
 
 enum ShotShape: String, Codable, Equatable {

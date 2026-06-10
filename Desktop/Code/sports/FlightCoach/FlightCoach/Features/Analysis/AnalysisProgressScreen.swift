@@ -44,6 +44,7 @@ struct AnalysisProgressScreen: View {
             switch newProgress {
             case .done(let result):
                 session.analysisResult = result
+                VideoStorageService.shared.deleteProcessedVideo(for: session)
                 try? modelContext.save()
                 // Dismiss back to AnalysisResultScreen — it holds the same session
                 // reference and will reflect the updated analysisResult immediately.

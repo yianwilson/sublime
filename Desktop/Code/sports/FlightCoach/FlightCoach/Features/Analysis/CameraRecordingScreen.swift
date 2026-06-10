@@ -6,6 +6,7 @@ struct CameraRecordingScreen: View {
     let sport: SportType
     let mode: String
     let angle: CameraAngle
+    var handedness: Handedness = .rightHanded
     let onComplete: (PracticeSession) -> Void
 
     @Environment(\.modelContext) private var modelContext
@@ -177,7 +178,7 @@ struct CameraRecordingScreen: View {
 
     private func saveRecording(at url: URL) async {
         do {
-            let session = PracticeSession(sport: sport, mode: mode, cameraAngle: angle)
+            let session = PracticeSession(sport: sport, mode: mode, cameraAngle: angle, handedness: handedness)
             session.durationSeconds = recordingDuration
 
             let savedURL = try await VideoStorageService.shared.copyVideoToLocal(from: url, sessionId: session.id)

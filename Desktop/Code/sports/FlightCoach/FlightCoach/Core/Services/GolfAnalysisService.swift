@@ -10,7 +10,6 @@ final class GolfAnalysisService {
         let confidence: Float
         let reason: String
         let isUsableForShotShape: Bool
-        let isUsableForSpeed: Bool
     }
 
     func analyse(
@@ -18,7 +17,8 @@ final class GolfAnalysisService {
         ballTrackPoints: [BallTrackPoint],
         contactFrameIndex: Int,
         contactConfidence: Float,
-        cameraAngle: CameraAngle
+        cameraAngle: CameraAngle,
+        poseSummary: PoseSummary? = nil
     ) -> GolfAnalysisResult {
         let trackQuality = evaluateBallTrack(ballTrackPoints)
         let shotShape = estimateShotShape(ballTrackPoints: ballTrackPoints, cameraAngle: cameraAngle, trackQuality: trackQuality)
@@ -44,7 +44,8 @@ final class GolfAnalysisService {
             ballTrackPoints: ballTrackPoints,
             metrics: metrics,
             feedback: feedback,
-            poseFrames: poseFrames
+            poseFrames: poseFrames,
+            poseSummary: poseSummary
         )
     }
 
@@ -92,9 +93,6 @@ final class GolfAnalysisService {
     ) -> [AnalysisMetric] {
         var metrics: [AnalysisMetric] = []
 
-        if let speed = estimateBallSpeed(ballTrackPoints: ballTrackPoints, trackQuality: trackQuality) {
-            metrics.append(speed)
-        }
         if let tempo = computeTempoRatio(poseFrames: poseFrames, contactFrameIndex: contactFrameIndex) {
             metrics.append(tempo)
         }
@@ -120,12 +118,12 @@ final class GolfAnalysisService {
             .sorted { $0.frameIndex < $1.frameIndex }
 
         guard sorted.count >= 2 else {
-            return BallTrackQuality(usablePoints: sorted, confidence: 0.15, reason: "too-few-points", isUsableForShotShape: false, isUsableForSpeed: false)
+            return BallTrackQuality(usablePoints: sorted, confidence: 0.15, reason: "too-few-points", isUsableForShotShape: false)
         }
 
         let totalPath = pathLength(sorted)
         guard let first = sorted.first, let last = sorted.last else {
-            return BallTrackQuality(usablePoints: sorted, confidence: 0.15, reason: "empty-track", isUsableForShotShape: false, isUsableForSpeed: false)
+            return BallTrackQuality(usablePoints: sorted, confidence: 0.15, reason: "empty-track", isUsableForShotShape: false)
         }
 
         let displacement = hypot(Double(last.x - first.x), Double(last.y - first.y))
@@ -136,54 +134,13 @@ final class GolfAnalysisService {
         let travelScore = min(1.0, Float(displacement / 0.18))
         let confidence = max(0.10, min(0.9, avgConfidence * 0.50 + pointScore * 0.22 + travelScore * 0.23 - Float(jumpPenalty) * 0.30))
 
-        let usableForSpeed = sorted.count >= 2 && displacement > 0.012 && jumpPenalty < 0.60
         let usableForShape = sorted.count >= 6 && displacement > 0.08 && totalPath > 0.1 && jumpPenalty < 0.3 && straightness > 0.55
 
         return BallTrackQuality(
             usablePoints: sorted,
             confidence: confidence,
             reason: usableForShape ? "tracked" : "weak-track",
-            isUsableForShotShape: usableForShape,
-            isUsableForSpeed: usableForSpeed
-        )
-    }
-
-    private func estimateBallSpeed(ballTrackPoints: [BallTrackPoint], trackQuality: BallTrackQuality) -> AnalysisMetric? {
-        let points = trackQuality.usablePoints
-        guard trackQuality.isUsableForSpeed, points.count >= 2 else {
-            return AnalysisMetric(
-                name: "Ball Speed",
-                value: 0,
-                unit: "mph",
-                confidence: min(0.25, trackQuality.confidence),
-                displayValue: "Unknown"
-            )
-        }
-
-        var speeds: [Double] = []
-        for pair in zip(points, points.dropFirst()) {
-            let a = pair.0
-            let b = pair.1
-            let dt = max(1.0 / 240.0, b.timestamp - a.timestamp)
-            let dist = hypot(Double(b.x - a.x), Double(b.y - a.y))
-            guard dist > 0.004 else { continue }
-            speeds.append(dist / dt)
-        }
-
-        guard !speeds.isEmpty else {
-            return AnalysisMetric(name: "Ball Speed", value: 0, unit: "mph", confidence: 0.2, displayValue: "Unknown")
-        }
-
-        let launchSpeed = speeds.prefix(4).max() ?? speeds.max() ?? 0
-        let estimatedMPH = max(20, min(210, launchSpeed * 42.0))
-        let confidence = min(0.65, max(0.18, trackQuality.confidence * 0.80))
-
-        return AnalysisMetric(
-            name: "Ball Speed",
-            value: estimatedMPH,
-            unit: "mph",
-            confidence: confidence,
-            displayValue: String(format: "~%.0f mph", estimatedMPH)
+            isUsableForShotShape: usableForShape
         )
     }
 

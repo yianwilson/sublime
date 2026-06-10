@@ -7,8 +7,10 @@ final class PracticeSession {
     var sport: String
     var mode: String
     var cameraAngle: String
+    var handedness: String = Handedness.rightHanded.rawValue
     var createdAt: Date
     var videoLocalPath: String?
+    var processedVideoLocalPath: String?
     var thumbnailLocalPath: String?
     var durationSeconds: Double
     var analysisResultData: Data?
@@ -19,12 +21,14 @@ final class PracticeSession {
         sport: SportType,
         mode: String,
         cameraAngle: CameraAngle,
+        handedness: Handedness = .rightHanded,
         createdAt: Date = .now
     ) {
         self.id = UUID()
         self.sport = sport.rawValue
         self.mode = mode
         self.cameraAngle = cameraAngle.rawValue
+        self.handedness = handedness.rawValue
         self.createdAt = createdAt
         self.durationSeconds = 0
         self.notes = ""
@@ -36,6 +40,15 @@ final class PracticeSession {
 
     var cameraAngleEnum: CameraAngle {
         CameraAngle(rawValue: cameraAngle) ?? .unknown
+    }
+
+    var handednessEnum: Handedness {
+        Handedness(rawValue: handedness) ?? .rightHanded
+    }
+
+    /// Handedness to use for analysis, honouring any manual correction.
+    var effectiveHandedness: Handedness {
+        manualCorrection?.correctedHandedness ?? handednessEnum
     }
 
     var analysisResult: AnalysisResult? {

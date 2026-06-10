@@ -6,13 +6,16 @@ final class VideoStorageService {
     static let shared = VideoStorageService()
 
     private let videosDirectory: URL
+    private let processedVideosDirectory: URL
     private let thumbnailsDirectory: URL
 
     private init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         videosDirectory = docs.appendingPathComponent("Videos", isDirectory: true)
+        processedVideosDirectory = docs.appendingPathComponent("ProcessedVideos", isDirectory: true)
         thumbnailsDirectory = docs.appendingPathComponent("Thumbnails", isDirectory: true)
         try? FileManager.default.createDirectory(at: videosDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: processedVideosDirectory, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: thumbnailsDirectory, withIntermediateDirectories: true)
     }
 
@@ -23,6 +26,10 @@ final class VideoStorageService {
         }
         try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
         return destinationURL
+    }
+
+    func processedVideoDestinationURL(for sessionId: UUID) -> URL {
+        processedVideosDirectory.appendingPathComponent("\(sessionId.uuidString)-traced.mov")
     }
 
     func generateThumbnail(from videoURL: URL, sessionId: UUID) async throws -> URL {
@@ -50,6 +57,19 @@ final class VideoStorageService {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
+    func processedVideoURL(for session: PracticeSession) -> URL? {
+        guard let path = session.processedVideoLocalPath else { return nil }
+        let url = URL(fileURLWithPath: path)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    func deleteProcessedVideo(for session: PracticeSession) {
+        if let path = session.processedVideoLocalPath {
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+        }
+        session.processedVideoLocalPath = nil
+    }
+
     func thumbnailURL(for session: PracticeSession) -> URL? {
         guard let path = session.thumbnailLocalPath else { return nil }
         let url = URL(fileURLWithPath: path)
@@ -60,6 +80,9 @@ final class VideoStorageService {
         if let path = session.videoLocalPath {
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
         }
+        if let path = session.processedVideoLocalPath {
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+        }
         if let path = session.thumbnailLocalPath {
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
         }
@@ -67,7 +90,7 @@ final class VideoStorageService {
 
     func totalStorageUsed() -> Int64 {
         var total: Int64 = 0
-        for dir in [videosDirectory, thumbnailsDirectory] {
+        for dir in [videosDirectory, processedVideosDirectory, thumbnailsDirectory] {
             guard let urls = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { continue }
             for url in urls {
                 let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0

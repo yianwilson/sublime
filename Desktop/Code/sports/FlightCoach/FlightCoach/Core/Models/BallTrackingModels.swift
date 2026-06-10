@@ -32,6 +32,32 @@ struct BallCandidate {
     let rejectionReason: String?
 }
 
+enum AddressFailureReason: String {
+    case noPose
+    case noCandidatesInROI
+    case ambiguous
+    case failedPostImpactValidation
+    case lowConfidence
+}
+
+/// Structured result of automatic address-ball detection. Carries the chosen
+/// candidate plus a calibrated confidence and the full ranked candidate list so
+/// the UI can decide between auto-accept and a one-tap fallback.
+struct AddressBallResult {
+    let selected: BallCandidate?
+    let confidence: Float
+    let candidates: [BallCandidate]
+    let roi: CGRect
+    let wristMidpoint: CGPoint?
+    let failureReason: AddressFailureReason?
+
+    var point: CGPoint? { selected?.centroid }
+
+    static func failure(_ reason: AddressFailureReason, candidates: [BallCandidate] = [], roi: CGRect = .init(x: 0, y: 0, width: 1, height: 1), wristMidpoint: CGPoint? = nil) -> AddressBallResult {
+        AddressBallResult(selected: nil, confidence: 0, candidates: candidates, roi: roi, wristMidpoint: wristMidpoint, failureReason: reason)
+    }
+}
+
 struct BallTrackingDebugReport {
     let impactWindow: ImpactWindow?
     let addressCandidates: [BallCandidate]

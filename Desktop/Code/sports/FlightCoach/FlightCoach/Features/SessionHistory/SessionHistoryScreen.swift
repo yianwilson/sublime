@@ -52,7 +52,7 @@ struct SessionHistoryScreen: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
                 FilterChip(title: "All", isSelected: filterSport == nil) { filterSport = nil }
-                ForEach(SportType.allCases) { sport in
+                ForEach(SportType.publicBetaSports) { sport in
                     FilterChip(title: sport.displayName, isSelected: filterSport == sport) {
                         filterSport = sport
                     }
