@@ -72,9 +72,13 @@ def find_impact_sec(video, w, h, fps, duration_frames):
 
 
 def chain_ball(video, w, h, fps, impact_sec, span=1.6):
-    """Diff frames after impact, cluster movers, chain by velocity continuity."""
+    """Diff frames after impact, cluster movers, chain by velocity continuity.
+
+    Works at ~720px width: at full 4K the ball moves further per frame than the
+    chain continuity radius and can never link up.
+    """
     n = int(span * fps)
-    fr = gray_frames(video, w, impact_sec, n, fps)
+    fr = gray_frames(video, min(720, w), impact_sec, n, fps)
     detections = []  # (frame_offset, x, y, npix)
     for i in range(1, len(fr)):
         d = np.abs(fr[i] - fr[i - 1])
@@ -90,6 +94,16 @@ def chain_ball(video, w, h, fps, impact_sec, span=1.6):
                 continue
             cx = float(np.mean([p[0] for p in c]))
             cy = float(np.mean([p[1] for p in c]))
+            # The ball is WHITE: its patch must be brighter than the local
+            # neighbourhood, else this is club/shadow/grass churn.
+            xi, yi = int(cx), int(cy)
+            H, W = fr.shape[1], fr.shape[2]
+            if not (12 < xi < W - 12 and 12 < yi < H - 12):
+                continue
+            patch = fr[i, yi - 3:yi + 4, xi - 3:xi + 4].mean()
+            ring = fr[i, yi - 12:yi + 13, xi - 12:xi + 13].mean()
+            if patch < ring + 6:
+                continue
             detections.append((i, cx, cy, len(c)))
 
     # Static-spot suppression: positions recurring across >40% of frames.
@@ -130,15 +144,34 @@ def chain_ball(video, w, h, fps, impact_sec, span=1.6):
     seeds = [d for f in frames_sorted[:6] for d in by_frame[f]]
     best_chain = []
     best_score = 0.0
+    # Kinematics alone cannot separate ball from club in the launch window
+    # (both bright, fast, straight-ish, same origin). Return the top distinct
+    # chains and let a human pick — one decision per video.
+    edge = fr.shape[1] * 0.04
+    scored = []
     for seed in seeds:
         c = build(seed)
-        if len(c) < 3:
+        if len(c) < 4:
+            continue
+        net_up = c[0][2] - c[-1][2]
+        if net_up < 10:
+            continue
+        if any(p[2] > fr.shape[1] - edge or p[2] < edge for p in c):
             continue
         net = ((c[-1][1] - c[0][1]) ** 2 + (c[-1][2] - c[0][2]) ** 2) ** 0.5
-        score = net * len(c)
-        if score > best_score:
-            best_score, best_chain = score, c
-    return best_chain, fr.shape[2], fr.shape[1]
+        scored.append((net * len(c), c))
+    scored.sort(key=lambda s: -s[0])
+
+    # Deduplicate chains sharing endpoints.
+    chains = []
+    for _, c in scored:
+        end = (round(c[-1][1] / 80), round(c[-1][2] / 80))
+        if any((round(o[-1][1] / 80), round(o[-1][2] / 80)) == end for o in chains):
+            continue
+        chains.append(c)
+        if len(chains) == 5:
+            break
+    return chains, fr.shape[2], fr.shape[1]
 
 
 def export(video, out, chain, scale_w, scale_h, w, h, fps, impact_sec, box_frac=0.02):
@@ -178,6 +211,8 @@ def main():
     ap.add_argument("--out", default="VisionLab/datasets/ball-v1")
     ap.add_argument("--impact-sec", type=float, default=None)
     ap.add_argument("--span", type=float, default=1.6, help="seconds after impact to label")
+    ap.add_argument("--pick", type=int, default=None,
+                    help="chain number to export (run once without to see chains.png)")
     args = ap.parse_args()
 
     video = Path(args.video)
@@ -190,11 +225,30 @@ def main():
         impact = find_impact_sec(video, w, h, fps, int(fps * 30))
         print(f"impact (auto, golfer-region motion peak): {impact:.2f}s — verify in review/")
 
-    chain, sw, sh = chain_ball(video, w, h, fps, impact, args.span)
-    if len(chain) < 3:
-        sys.exit(f"only {len(chain)} chained detections — ball not found; pass --impact-sec")
-    print(f"chained {len(chain)} ball detections over {chain[-1][0] - chain[0][0]} frames")
+    chains, sw, sh = chain_ball(video, w, h, fps, impact, args.span)
+    if not chains:
+        sys.exit("no candidate chains found — pass/adjust --impact-sec")
 
+    if args.pick is None:
+        # Render every chain on the impact frame, one colour each, for human pick.
+        out.mkdir(parents=True, exist_ok=True)
+        colours = ["red", "yellow", "lime", "cyan", "magenta"]
+        boxes = []
+        for i, c in enumerate(chains):
+            col = colours[i % len(colours)]
+            pts = " ".join(f"({int(p[1] * w / sw)},{int(p[2] * h / sh)})" for p in c[:4])
+            print(f"chain {i + 1} [{col}]: {len(c)} pts, frames +{c[0][0]}..+{c[-1][0]}, starts {pts}")
+            for p in c:
+                x, y = int(p[1] * w / sw), int(p[2] * h / sh)
+                boxes.append(f"drawbox=x={x - 18}:y={y - 18}:w=36:h=36:color={col}@0.9:t=6")
+        comp = out / f"{Path(video).stem}_chains.png"
+        subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-ss", f"{impact:.3f}", "-i", str(video),
+             "-frames:v", "1", "-vf", ",".join(boxes), str(comp)], check=True)
+        print(f"\nwrote {comp} — find the chain following the BALL, then re-run with --pick N")
+        return
+
+    chain = chains[args.pick - 1]
     n = export(video, out, chain, sw, sh, w, h, fps, impact)
     print(f"wrote {n} image+label pairs to {out}/ — REVIEW {out}/review/ before training")
 
