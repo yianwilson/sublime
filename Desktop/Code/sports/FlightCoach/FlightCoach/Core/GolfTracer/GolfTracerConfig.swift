@@ -4,8 +4,8 @@ import CoreGraphics
 /// All tracer thresholds live here (spec §5). Magic numbers MUST NOT be scattered through
 /// the detection/tracking/validation code — every gate reads from this config.
 struct GolfTracerConfig {
-    // Address ball
-    var minimumAddressConfidence: Double = 0.65
+    // Address ball (lowered from 0.65 to enable tracing on more videos; validation gates remain strict)
+    var minimumAddressConfidence: Double = 0.50
     var minimumStableAddressDetections: Int = 3
     var maxAddressPositionVariancePx: CGFloat = 12
 
@@ -43,9 +43,9 @@ struct GolfTracerConfig {
     var maxConsecutiveMissingFrames120fps: Int = 6
     var maxConsecutiveMissingFrames60fps: Int = 3
 
-    // Candidate quality
-    var minCandidateVisualScore: Double = 0.20
-    var minCandidateMotionScore: Double = 0.15
+    // Candidate quality (lowered to allow static balls through, ranked later)
+    var minCandidateVisualScore: Double = 0.15
+    var minCandidateMotionScore: Double = 0.05
 
     // Initial launch-track rejection (spec §11.5), at 4K baseline
     var minLaunchRealPoints: Int = 3
