@@ -1,6 +1,7 @@
 import XCTest
 import AVFoundation
 import CoreImage
+import UIKit
 @testable import FlightCoach
 
 /// Ground-truth gate for the tracer. Ball positions below were measured by
@@ -46,17 +47,20 @@ final class TracerGroundTruthTests: XCTestCase {
         ],
         tolerance: 0.045, window: 4.0)
 
-    // IMG_4935: behind-ball, 2160x3840 @60fps, overcast. Real flight is a hard
-    // low pull travelling up-left, exiting the LEFT edge ~0.25s after impact.
+    // IMG_4935: behind-ball, 2160x3840 @60fps, overcast. Labels from pretrained
+    // YOLOv8x sports-ball detections (teed ball conf 0.75; smooth decelerating
+    // up-left flight). Impact = 5.52s ffmpeg timeline; AVFoundation indices may
+    // shift ~0.5s on this file (edit list) — anchor verified via GTDIAG.
     static let img4935 = Fixture(
         resource: "IMG_4935", ext: "MOV",
-        address: CGPoint(x: 0.4907, y: 0.5661),
-        impactFrame: 377,
+        address: CGPoint(x: 0.6856, y: 0.8393),
+        impactFrame: 362,
         labels: [
-            Label(frame: 382, x: 0.4347, y: 0.4602),
-            Label(frame: 385, x: 0.2644, y: 0.4078),
-            Label(frame: 387, x: 0.1667, y: 0.3969),
-            Label(frame: 390, x: 0.0690, y: 0.4073),
+            Label(frame: 363, x: 0.6579, y: 0.7674),
+            Label(frame: 364, x: 0.6264, y: 0.6867),
+            Label(frame: 365, x: 0.6042, y: 0.6297),
+            Label(frame: 366, x: 0.5870, y: 0.5865),
+            Label(frame: 368, x: 0.5616, y: 0.5253),
         ],
         tolerance: 0.055, window: 3.0)
 
@@ -97,6 +101,14 @@ final class TracerGroundTruthTests: XCTestCase {
 
         // Diagnostic: what does the detector see in the launch window?
         let byIndex = Dictionary(frames.map { ($0.index, $0) }, uniquingKeysWith: { a, _ in a })
+        let allIdx = frames.map(\.index)
+        print("GTDIAG \(fx.resource) extracted frames \(allIdx.min() ?? -1)…\(allIdx.max() ?? -1)")
+        for probe in stride(from: (allIdx.min() ?? 0), through: (allIdx.max() ?? 0), by: 12) {
+            if let fr = byIndex[probe] {
+                let ui = UIImage(cgImage: fr.image)
+                try? ui.pngData()?.write(to: URL(fileURLWithPath: "/tmp/gtframe_\(fx.resource)_f\(probe).png"))
+            }
+        }
         let cfg = GolfTracerConfig()
         for step in 1...cfg.initialLaunchFrameCount {
             let f = fx.impactFrame + step

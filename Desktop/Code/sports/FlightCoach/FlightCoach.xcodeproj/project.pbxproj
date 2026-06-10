@@ -55,6 +55,7 @@
 		8837102B7D126D9BBAC8846D /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 62DB1816CD6EC3A5CB17745F /* CoreML.framework */; };
 		887F83835027FAF8BD2B3AC1 /* IMG_4935.MOV in Resources */ = {isa = PBXBuildFile; fileRef = 3096C0B52263262810E08551 /* IMG_4935.MOV */; };
 		8B266F98BB48969F69C8D166 /* IMG_4165.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 961CDAD74A39C1F90B601806 /* IMG_4165.mp4 */; };
+		8C3C00672D5FA0655D4ABFC3 /* VNTrajectoryProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEE1D0627D83B6B6C1B09E8 /* VNTrajectoryProbeTests.swift */; };
 		90576A54987A90A64A87F5C0 /* GolfAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C8848FDD59ABC2F4BB59E5 /* GolfAnalysisService.swift */; };
 		90F996997E9480DC4EB0CF46 /* TracerGroundTruthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4774731EF09B3F7384A3DC29 /* TracerGroundTruthTests.swift */; };
 		A67FFBE123BDCE8C6A241B3E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78759410E08F12E42327BFD /* ContentView.swift */; };
@@ -152,6 +153,7 @@
 		C52F9C4B6997AEE53F32C313 /* TrackValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackValidator.swift; sourceTree = "<group>"; };
 		C90D390FD0B3E09E5FFB6326 /* VisionBenchmarkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionBenchmarkModels.swift; sourceTree = "<group>"; };
 		CAD4E7FA40247C32AC0EA9A2 /* SessionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRepository.swift; sourceTree = "<group>"; };
+		CBEE1D0627D83B6B6C1B09E8 /* VNTrajectoryProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VNTrajectoryProbeTests.swift; sourceTree = "<group>"; };
 		D1F4D52A4ACD5602921E7048 /* FullTraceFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullTraceFlowUITests.swift; sourceTree = "<group>"; };
 		D29F43EE3D28878F079ECB33 /* SessionSetupScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetupScreen.swift; sourceTree = "<group>"; };
 		D35B5708E63CFF7EC209F648 /* FlightCoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightCoachApp.swift; sourceTree = "<group>"; };
@@ -287,6 +289,7 @@
 				4774731EF09B3F7384A3DC29 /* TracerGroundTruthTests.swift */,
 				C317D7D0507CF64C2BF5D39D /* TracerIntegrationTests.swift */,
 				985AD13B771B42AE53F9A8A6 /* TrackValidatorTests.swift */,
+				CBEE1D0627D83B6B6C1B09E8 /* VNTrajectoryProbeTests.swift */,
 				27A27C2DE2148A0231385C23 /* Resources */,
 			);
 			path = FlightCoachTests;
@@ -599,6 +602,7 @@
 				90F996997E9480DC4EB0CF46 /* TracerGroundTruthTests.swift in Sources */,
 				EC97665502021F7854477DFB /* TracerIntegrationTests.swift in Sources */,
 				465B4B40518DB4A1EB17612B /* TrackValidatorTests.swift in Sources */,
+				8C3C00672D5FA0655D4ABFC3 /* VNTrajectoryProbeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
