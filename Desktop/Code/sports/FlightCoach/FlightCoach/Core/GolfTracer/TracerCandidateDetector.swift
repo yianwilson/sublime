@@ -20,28 +20,22 @@ enum TracerCandidateDetector {
               let cur = Bitmap(cgImage: frame.image, crop: roi) else { return [] }
 
         var candidates: [TracerCandidate] = []
-
-        // Static ball detector: look for compact, round, high-contrast blobs (for address/mid-flight stalls)
-        candidates.append(contentsOf: staticBallCandidates(cur, frame: frame, roi: roi))
-
-        // Dynamic/motion detector
         candidates.append(contentsOf: contrastCandidates(cur, frame: frame, roi: roi))
 
         if let previous, let prev = Bitmap(cgImage: previous.image, crop: roi),
            prev.width == cur.width, prev.height == cur.height {
             candidates.append(contentsOf: motionCandidates(cur, prev, frame: frame, roi: roi))
+        } else {
+            // No motion reference (single-frame query, e.g. address inspection):
+            // fall back to sharpness blobs so a stationary ball is still findable.
+            candidates.append(contentsOf: staticBallCandidates(cur, frame: frame, roi: roi))
         }
 
-        // Rank by motion when available, but don't penalize static balls heavily.
-        // A high-confidence static blob (visual+brightness) beats a low-motion candidate.
-        func rank(_ c: TracerCandidate) -> Double {
-            let motionWeight = c.motionScore > 0.3 ? 0.4 : 0.1  // downweight motion if very low
-            let visualWeight = c.visualScore > 0.6 ? 0.35 : 0.25
-            let brightnessWeight = 0.25
-            return motionWeight * c.motionScore + visualWeight * c.visualScore + brightnessWeight * c.brightnessScore
-        }
+        // The ball is the thing that MOVES and CONTRASTS with its local background — not the
+        // brightest blob. Rank by motion + local contrast, roundness as a tiebreaker.
+        func rank(_ c: TracerCandidate) -> Double { c.motionScore + c.brightnessScore + 0.3 * c.visualScore }
         return candidates
-            .filter { ($0.motionScore + $0.brightnessScore + $0.visualScore) >= 0.20 }  // looser gate, relies on ranking
+            .filter { ($0.motionScore + $0.brightnessScore) >= 0.12 }
             .sorted { rank($0) > rank($1) }
             .prefix(config.maxCandidatesPerFrame)
             .map { $0 }
