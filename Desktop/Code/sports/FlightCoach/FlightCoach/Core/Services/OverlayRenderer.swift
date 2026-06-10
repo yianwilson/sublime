@@ -164,12 +164,9 @@ struct BallTrailOverlayView: View {
                 }
 
                 let viewPoints = revealed.map { pointToView($0, in: videoRect) }
-                let path = smoothedPath(points: viewPoints)
-                context.stroke(
-                    path,
-                    with: .color(.orange.opacity(0.9)),
-                    style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
-                )
+
+                // Draw trail with progressive thickness and distance-based opacity
+                drawProgressiveTrail(context: context, points: viewPoints)
 
                 // Ball at launch (hollow ring) and a live "head" dot at the leading edge.
                 drawBall(context, at: viewPoints[0])
@@ -180,6 +177,35 @@ struct BallTrailOverlayView: View {
                     )
                 }
             }
+        }
+    }
+
+    private func drawProgressiveTrail(context: GraphicsContext, points: [CGPoint]) {
+        guard points.count > 1 else { return }
+
+        // Draw trail segments with progressive thickness and opacity
+        for i in 0..<(points.count - 1) {
+            let start = points[i]
+            let end = points[i + 1]
+
+            // Progress along the trail: 0 = start (thin), 1 = end (thick)
+            let progress = CGFloat(i) / CGFloat(max(1, points.count - 1))
+
+            // Line width: thin (1.5) at start, thick (5.5) at end
+            let lineWidth = 1.5 + progress * 4.0
+
+            // Opacity: 0.5 at start (far), 0.95 at end (close/recent)
+            let opacity = 0.5 + progress * 0.45
+
+            var segmentPath = Path()
+            segmentPath.move(to: start)
+            segmentPath.addLine(to: end)
+
+            context.stroke(
+                segmentPath,
+                with: .color(.orange.opacity(opacity)),
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+            )
         }
     }
 

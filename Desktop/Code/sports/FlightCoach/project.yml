@@ -33,4 +33,20 @@ targets:
       - sdk: PhotosUI.framework
       - sdk: CoreData.framework
     scheme:
+      testTargets:
+        - FlightCoachTests
       gatherCoverageData: false
+
+  FlightCoachTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: FlightCoachTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.flightcoach.tests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: FlightCoach

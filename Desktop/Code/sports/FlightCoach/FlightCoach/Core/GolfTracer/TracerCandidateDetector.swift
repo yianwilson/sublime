@@ -20,6 +20,11 @@ enum TracerCandidateDetector {
               let cur = Bitmap(cgImage: frame.image, crop: roi) else { return [] }
 
         var candidates: [TracerCandidate] = []
+
+        // Static ball detector: look for compact, round, high-contrast blobs (for address/mid-flight stalls)
+        candidates.append(contentsOf: staticBallCandidates(cur, frame: frame, roi: roi))
+
+        // Dynamic/motion detector
         candidates.append(contentsOf: contrastCandidates(cur, frame: frame, roi: roi))
 
         if let previous, let prev = Bitmap(cgImage: previous.image, crop: roi),
@@ -27,14 +32,66 @@ enum TracerCandidateDetector {
             candidates.append(contentsOf: motionCandidates(cur, prev, frame: frame, roi: roi))
         }
 
-        // The ball is the thing that MOVES and CONTRASTS with its local background — not the
-        // brightest blob. Rank by motion + local contrast, roundness as a tiebreaker.
-        func rank(_ c: TracerCandidate) -> Double { c.motionScore + c.brightnessScore + 0.3 * c.visualScore }
+        // Rank by motion when available, but don't penalize static balls heavily.
+        // A high-confidence static blob (visual+brightness) beats a low-motion candidate.
+        func rank(_ c: TracerCandidate) -> Double {
+            let motionWeight = c.motionScore > 0.3 ? 0.4 : 0.1  // downweight motion if very low
+            let visualWeight = c.visualScore > 0.6 ? 0.35 : 0.25
+            let brightnessWeight = 0.25
+            return motionWeight * c.motionScore + visualWeight * c.visualScore + brightnessWeight * c.brightnessScore
+        }
         return candidates
-            .filter { ($0.motionScore + $0.brightnessScore) >= 0.12 }
+            .filter { ($0.motionScore + $0.brightnessScore + $0.visualScore) >= 0.20 }  // looser gate, relies on ranking
             .sorted { rank($0) > rank($1) }
             .prefix(config.maxCandidatesPerFrame)
             .map { $0 }
+    }
+
+    // MARK: - Static ball detection (address, stalls)
+    //
+    // For stationary balls, a motion detector won't fire. Instead, look for compact,
+    // round, high-local-contrast blobs using Laplacian-like sharpness. A golf ball
+    // is a tight, sharp intensity peak (bright or dark) relative to its local region.
+    private static func staticBallCandidates(_ bmp: Bitmap, frame: TracerFrameInfo, roi: CGRect) -> [TracerCandidate] {
+        let w = bmp.width, h = bmp.height
+        guard w > 8, h > 8 else { return [] }
+
+        var bright = [Float](repeating: 0, count: w * h)
+        for y in 0..<h {
+            for x in 0..<w {
+                let (r, g, b) = bmp.rgb(x, y)
+                bright[y * w + x] = (Float(r) + Float(g) + Float(b)) / 765.0
+            }
+        }
+
+        // Sharpness detection: compare each pixel to its neighborhood (Laplacian-like).
+        // A sharp blob has high |pixel - neighborhood_mean|.
+        var sharpness = [Float](repeating: 0, count: w * h)
+        let radius = 4
+        for y in 0..<h {
+            for x in 0..<w {
+                var sum: Float = 0, count = 0
+                for dy in -radius...radius {
+                    for dx in -radius...radius {
+                        guard dx != 0 || dy != 0 else { continue }
+                        let ny = y + dy, nx = x + dx
+                        guard ny >= 0, ny < h, nx >= 0, nx < w else { continue }
+                        sum += bright[ny * w + nx]
+                        count += 1
+                    }
+                }
+                let neighborMean = count > 0 ? sum / Float(count) : 0
+                let center = bright[y * w + x]
+                sharpness[y * w + x] = abs(center - neighborMean)
+            }
+        }
+
+        // Find connected components of high-sharpness pixels (potential ball centers).
+        var mask = [Bool](repeating: false, count: w * h)
+        let sharpThreshold: Float = 0.08
+        for i in 0..<(w * h) { mask[i] = sharpness[i] > sharpThreshold }
+
+        return blobs(mask: mask, value: sharpness, bmp: bmp, frame: frame, roi: roi, motion: 0, source: .brightBlob)
     }
 
     // MARK: - Local-contrast blobs
@@ -48,12 +105,17 @@ enum TracerCandidateDetector {
         guard w > 4, h > 4 else { return [] }
 
         var bright = [Float](repeating: 0, count: w * h)
+        var maxBright: Float = 0, minBright: Float = 1
         for y in 0..<h {
             for x in 0..<w {
                 let (r, g, b) = bmp.rgb(x, y)
-                bright[y * w + x] = (Float(r) + Float(g) + Float(b)) / 765.0
+                let luminance = (Float(r) + Float(g) + Float(b)) / 765.0
+                bright[y * w + x] = luminance
+                maxBright = max(maxBright, luminance)
+                minBright = min(minBright, luminance)
             }
         }
+
         // Coarse local-background mean per cell (absorbs gradients like sky).
         let cell = max(10, max(w, h) / 12)
         let gw = (w + cell - 1) / cell, gh = (h + cell - 1) / cell
@@ -68,14 +130,18 @@ enum TracerCandidateDetector {
         var cellMean = [Float](repeating: 0, count: gw * gh)
         for i in 0..<(gw * gh) where cellCnt[i] > 0 { cellMean[i] = cellSum[i] / Float(cellCnt[i]) }
 
+        // Adaptive threshold: if scene is low-contrast (sky dominated), use a lower threshold.
+        let range = maxBright - minBright
+        let contrastThreshold: Float = range > 0.4 ? 0.12 : 0.08  // lower threshold in low-contrast scenes
+
         var mask = [Bool](repeating: false, count: w * h)
         var value = [Float](repeating: 0, count: w * h)
         for y in 0..<h {
             for x in 0..<w {
                 let dev = bright[y * w + x] - cellMean[(y / cell) * gw + (x / cell)]
-                if abs(dev) > 0.13 {
+                if abs(dev) > contrastThreshold {
                     mask[y * w + x] = true
-                    value[y * w + x] = min(1, abs(dev) * 3)
+                    value[y * w + x] = min(1, abs(dev) * 4)  // increase sensitivity
                 }
             }
         }
@@ -85,6 +151,21 @@ enum TracerCandidateDetector {
     // MARK: - Motion blobs
 
     private static func motionCandidates(_ cur: Bitmap, _ prev: Bitmap, frame: TracerFrameInfo, roi: CGRect) -> [TracerCandidate] {
+        // Estimate per-pixel motion noise floor from the full frame difference distribution
+        var diffs: [Int] = []
+        diffs.reserveCapacity(cur.width * cur.height)
+        for y in 0..<cur.height {
+            for x in 0..<cur.width {
+                let (r, g, b) = cur.rgb(x, y)
+                let (pr, pg, pb) = prev.rgb(x, y)
+                let diff = abs(Int(r) - Int(pr)) + abs(Int(g) - Int(pg)) + abs(Int(b) - Int(pb))
+                diffs.append(diff)
+            }
+        }
+        diffs.sort()
+        let p75 = diffs[Int(Double(diffs.count) * 0.75)]
+        let motionThreshold = max(40, min(80, p75 + 25))  // adaptive, but bounded
+
         var mask = [Bool](repeating: false, count: cur.width * cur.height)
         var value = [Float](repeating: 0, count: cur.width * cur.height)
         for y in 0..<cur.height {
@@ -92,7 +173,7 @@ enum TracerCandidateDetector {
                 let (r, g, b) = cur.rgb(x, y)
                 let (pr, pg, pb) = prev.rgb(x, y)
                 let diff = abs(Int(r) - Int(pr)) + abs(Int(g) - Int(pg)) + abs(Int(b) - Int(pb))
-                if diff > 60 {
+                if diff > motionThreshold {
                     let i = y * cur.width + x
                     mask[i] = true
                     value[i] = min(1, Float(diff) / 255.0)
@@ -126,7 +207,7 @@ enum TracerCandidateDetector {
                         if mask[n], !visited[n] { visited[n] = true; queue.append((nx, ny)) }
                     }
                 }
-                guard pixels.count >= 2, pixels.count <= 1200 else { continue }
+                guard pixels.count >= 2, pixels.count <= 2000 else { continue }
 
                 let xs = pixels.map(\.0), ys = pixels.map(\.1)
                 let minX = xs.min()!, maxX = xs.max()!, minY = ys.min()!, maxY = ys.max()!
@@ -134,6 +215,12 @@ enum TracerCandidateDetector {
                 let cyLocal = Double(ys.reduce(0, +)) / Double(pixels.count)
 
                 let bw = maxX - minX + 1, bh = maxY - minY + 1
+                let minDim = min(bw, bh)
+
+                // Filter obviously wrong sizes: too tiny (noise) or way too big (artifacts)
+                guard minDim >= 2 else { continue }
+                guard minDim <= 200 else { continue }
+
                 let aspect = Float(min(bw, bh)) / Float(max(bw, bh))
                 let fill = Float(pixels.count) / Float(bw * bh)
                 let fillErr = min(1, abs(fill - 0.785) / 0.5)
