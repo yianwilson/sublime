@@ -111,9 +111,20 @@ final class AnalysisPipeline: ObservableObject {
                             cameraAngle: cameraAngle, handedness: handedness)
                     }
                     if let addressNorm {
-                        ballTrackPoints = await golfTracerTrack(
-                            frames: trackingFrames, addressNormalized: addressNorm,
-                            impactFrame: impactWindow.estimatedFrameIndex, frameRate: extractor.frameRate)
+                        // Apple's trajectory detector first: proven on ground-truth
+                        // fixtures where motion heuristics fail. Falls back to the
+                        // spec-v3 tracer if no plausible trajectory survives.
+                        let impactTime = Double(impactWindow.estimatedFrameIndex) / extractor.frameRate
+                        if let vnPoints = await TrajectoryDetectionService.shared.ballFlight(
+                            url: videoURL, addressNormalized: addressNorm,
+                            frameRate: extractor.frameRate, impactTime: impactTime),
+                           vnPoints.count >= 4 {
+                            ballTrackPoints = vnPoints
+                        } else {
+                            ballTrackPoints = await golfTracerTrack(
+                                frames: trackingFrames, addressNormalized: addressNorm,
+                                impactFrame: impactWindow.estimatedFrameIndex, frameRate: extractor.frameRate)
+                        }
                     } else {
                         ballTrackPoints = []
                     }

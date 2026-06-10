@@ -42,6 +42,7 @@
 		6434F3329413CEB3F7D40FEC /* ManualCorrectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F9BEE60616043BE0C9C651 /* ManualCorrectionService.swift */; };
 		65F1B775BCE8540881972464 /* BallDetectorFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F3B1A30C149A851EAAED570 /* BallDetectorFactory.swift */; };
 		664D73DE899AE261BC20FD0A /* TracerCandidateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669283E7FCB1C65E75E3C09B /* TracerCandidateDetector.swift */; };
+		67CEA19F2AAA390AABD7146C /* TrajectoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06308DC27529B51C6CE7F7D4 /* TrajectoryServiceTests.swift */; };
 		6D28E6A8E5DEB0A9C62BA005 /* AnalysisModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3388BE38556D44B2B809C244 /* AnalysisModels.swift */; };
 		6E25EC8989866E985537661E /* TracerGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1574F3F606604EEF29B43A6 /* TracerGeometryTests.swift */; };
 		70490BACAC39693B2AC2D3B5 /* CameraRecordingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE6317FF1040E082329C4CE /* CameraRecordingScreen.swift */; };
@@ -74,6 +75,7 @@
 		DEAA853DF4A9962AE1DA740C /* ManualCorrectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB646E833409804658C6112 /* ManualCorrectionSheet.swift */; };
 		EC7A776E3A52A563B71EDB08 /* FeedbackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFA2EDFDEE5C1AFA5E44C64 /* FeedbackEngine.swift */; };
 		EC97665502021F7854477DFB /* TracerIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C317D7D0507CF64C2BF5D39D /* TracerIntegrationTests.swift */; };
+		ECCB0E368163B0AAD606FA4B /* TrajectoryDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6CFE4310A32A2409AECC17 /* TrajectoryDetectionService.swift */; };
 		F6344C90BE34CFA94A493E92 /* TrackValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52F9C4B6997AEE53F32C313 /* TrackValidator.swift */; };
 		F72396104BED978706E07C00 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A6BB7C96082146FE3D70E4 /* AppTheme.swift */; };
 		F9433A0EE6A471D21B4DF47F /* BallTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AB4E8504AEC502E7435CF2D /* BallTrackingService.swift */; };
@@ -99,7 +101,9 @@
 
 /* Begin PBXFileReference section */
 		02A6BB7C96082146FE3D70E4 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		06308DC27529B51C6CE7F7D4 /* TrajectoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryServiceTests.swift; sourceTree = "<group>"; };
 		08D7EDA287ADC6287F197D92 /* TracerTracking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracerTracking.swift; sourceTree = "<group>"; };
+		0C6CFE4310A32A2409AECC17 /* TrajectoryDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryDetectionService.swift; sourceTree = "<group>"; };
 		0FE315357D9230274BD1244D /* PoseModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseModels.swift; sourceTree = "<group>"; };
 		10581589C96AA9278A867D59 /* VideoFrameExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoFrameExtractor.swift; sourceTree = "<group>"; };
 		14C3BF27CF5AADD4DFD97BB4 /* FlightCoachTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FlightCoachTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -289,6 +293,7 @@
 				4774731EF09B3F7384A3DC29 /* TracerGroundTruthTests.swift */,
 				C317D7D0507CF64C2BF5D39D /* TracerIntegrationTests.swift */,
 				985AD13B771B42AE53F9A8A6 /* TrackValidatorTests.swift */,
+				06308DC27529B51C6CE7F7D4 /* TrajectoryServiceTests.swift */,
 				CBEE1D0627D83B6B6C1B09E8 /* VNTrajectoryProbeTests.swift */,
 				27A27C2DE2148A0231385C23 /* Resources */,
 			);
@@ -363,6 +368,7 @@
 				46D9B4193198D5AF41E58763 /* TennisAnalysisService.swift */,
 				A6959D5F7C20451932ABA244 /* TracerExportService.swift */,
 				302181669AD569DB369D9F5A /* TrainingDataService.swift */,
+				0C6CFE4310A32A2409AECC17 /* TrajectoryDetectionService.swift */,
 				10581589C96AA9278A867D59 /* VideoFrameExtractor.swift */,
 				B367143DCAADF181256CA940 /* VideoImportManager.swift */,
 				77E39D03178E00203FB92B7B /* VideoStorageService.swift */,
@@ -602,6 +608,7 @@
 				90F996997E9480DC4EB0CF46 /* TracerGroundTruthTests.swift in Sources */,
 				EC97665502021F7854477DFB /* TracerIntegrationTests.swift in Sources */,
 				465B4B40518DB4A1EB17612B /* TrackValidatorTests.swift in Sources */,
+				67CEA19F2AAA390AABD7146C /* TrajectoryServiceTests.swift in Sources */,
 				8C3C00672D5FA0655D4ABFC3 /* VNTrajectoryProbeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -658,6 +665,7 @@
 				14A2AD665CD277629FCD8E71 /* TracerTracking.swift in Sources */,
 				F6344C90BE34CFA94A493E92 /* TrackValidator.swift in Sources */,
 				43D3F0F80C2CD307A6434DC8 /* TrainingDataService.swift in Sources */,
+				ECCB0E368163B0AAD606FA4B /* TrajectoryDetectionService.swift in Sources */,
 				B3EABFCD07D2A00AE881BC53 /* VideoFrameExtractor.swift in Sources */,
 				3B17CD0C5BA8E5DDCC98CB1A /* VideoImportManager.swift in Sources */,
 				367F114EF30E324AF6A122B5 /* VideoPlayerView.swift in Sources */,
