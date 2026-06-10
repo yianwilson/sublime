@@ -169,6 +169,11 @@ enum LaunchTrackSelector {
         let scale = TracerGeometry.resolutionScale(width: width, height: height)
         let net = TracerGeometry.netDisplacement([addressBall] + postImpact)
         guard net >= config.minLaunchNetDisplacementPx4K * scale else { return false }
+        // A golf launch always RISES in frame (pixel y decreases) regardless of camera
+        // angle. This rejects the club head / shadow sweeping through the hitting area,
+        // which otherwise out-scores the ball and produces a ground-level "trace".
+        guard let firstPos = positions.first, let lastPos = positions.last,
+              lastPos.y < firstPos.y else { return false }
         guard TracerGeometry.pathEfficiencyRatio(positions) <= config.maxPathEfficiencyRatio else { return false }
         guard TracerGeometry.averageDirectionConsistency(positions) >= config.minLaunchDirectionConsistency else { return false }
         guard !TracerGeometry.hasImmediateReversal(positions) else { return false }

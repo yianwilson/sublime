@@ -50,6 +50,17 @@
                ReferencedContainer = "container:FlightCoach.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BEE45709FDEAFC73F51847F9"
+               BuildableName = "FlightCoachUITests.xctest"
+               BlueprintName = "FlightCoachUITests"
+               ReferencedContainer = "container:FlightCoach.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

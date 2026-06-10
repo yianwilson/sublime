@@ -35,7 +35,22 @@ targets:
     scheme:
       testTargets:
         - FlightCoachTests
+        - FlightCoachUITests
       gatherCoverageData: false
+
+  FlightCoachUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: FlightCoachUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.flightcoach.uitests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: FlightCoach
 
   FlightCoachTests:
     type: bundle.unit-test

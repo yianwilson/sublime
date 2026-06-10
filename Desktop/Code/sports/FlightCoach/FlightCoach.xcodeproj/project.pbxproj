@@ -32,6 +32,7 @@
 		49EEF7863A5023C0D7D2FC92 /* GolfTracerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B14E222F5CA75436A19856 /* GolfTracerModels.swift */; };
 		4A6993B6EF5517277CA9D339 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A01AD4D506B4A6E0034E66 /* Photos.framework */; };
 		4B106E3A90FEC3F406732951 /* PracticeSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */; };
+		4B115D305694BCCF3316AC1F /* FullTraceFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F4D52A4ACD5602921E7048 /* FullTraceFlowUITests.swift */; };
 		4CF78E31DE7551998DAC79CD /* VisionBenchmarkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C90D390FD0B3E09E5FFB6326 /* VisionBenchmarkModels.swift */; };
 		50C6BC2F269B644D9B5A98D9 /* BallisticTrajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE5D8725A1B14AC80375C0E /* BallisticTrajectory.swift */; };
 		54BDAE176BCB59B2D026115F /* TennisAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D9B4193198D5AF41E58763 /* TennisAnalysisService.swift */; };
@@ -84,6 +85,13 @@
 			remoteGlobalIDString = A6295D71E29813E88592AF81;
 			remoteInfo = FlightCoach;
 		};
+		94D1298BDDD6046274F6C951 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C6AA0749670941B584B46041 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A6295D71E29813E88592AF81;
+			remoteInfo = FlightCoach;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -116,6 +124,7 @@
 		6DB646E833409804658C6112 /* ManualCorrectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCorrectionSheet.swift; sourceTree = "<group>"; };
 		71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSession.swift; sourceTree = "<group>"; };
 		72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FlightCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		75E03DEA627ADF355950DF66 /* FlightCoachUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FlightCoachUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		75F9BEE60616043BE0C9C651 /* ManualCorrectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCorrectionService.swift; sourceTree = "<group>"; };
 		75FCA187CCA597280589270B /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		77E39D03178E00203FB92B7B /* VideoStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStorageService.swift; sourceTree = "<group>"; };
@@ -139,6 +148,7 @@
 		C52F9C4B6997AEE53F32C313 /* TrackValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackValidator.swift; sourceTree = "<group>"; };
 		C90D390FD0B3E09E5FFB6326 /* VisionBenchmarkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionBenchmarkModels.swift; sourceTree = "<group>"; };
 		CAD4E7FA40247C32AC0EA9A2 /* SessionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRepository.swift; sourceTree = "<group>"; };
+		D1F4D52A4ACD5602921E7048 /* FullTraceFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullTraceFlowUITests.swift; sourceTree = "<group>"; };
 		D29F43EE3D28878F079ECB33 /* SessionSetupScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetupScreen.swift; sourceTree = "<group>"; };
 		D35B5708E63CFF7EC209F648 /* FlightCoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightCoachApp.swift; sourceTree = "<group>"; };
 		DBC86F9B59CFA452B073AC1B /* CompositeBallDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeBallDetector.swift; sourceTree = "<group>"; };
@@ -176,11 +186,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		045F4080BDA1F73C833F3B3D /* FlightCoachUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D1F4D52A4ACD5602921E7048 /* FullTraceFlowUITests.swift */,
+			);
+			path = FlightCoachUITests;
+			sourceTree = "<group>";
+		};
 		19AE467766AB6DA9A66D0ABA = {
 			isa = PBXGroup;
 			children = (
 				978C4DF70BC74E4CDB4B0DF6 /* FlightCoach */,
 				62A98F5FE0B32265ABCA4DFC /* FlightCoachTests */,
+				045F4080BDA1F73C833F3B3D /* FlightCoachUITests */,
 				67E23A5AFE653744C6B4FBD4 /* Frameworks */,
 				3A84FA8E67125E2B01C88CB0 /* Products */,
 			);
@@ -218,6 +237,7 @@
 			children = (
 				72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */,
 				14C3BF27CF5AADD4DFD97BB4 /* FlightCoachTests.xctest */,
+				75E03DEA627ADF355950DF66 /* FlightCoachUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -477,6 +497,24 @@
 			productReference = 72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BEE45709FDEAFC73F51847F9 /* FlightCoachUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B823AD8E224C01B4E4DFDFE8 /* Build configuration list for PBXNativeTarget "FlightCoachUITests" */;
+			buildPhases = (
+				4C96BDBE0C6A0ADA4216AA0D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6B27C76233CE9892F8E33581 /* PBXTargetDependency */,
+			);
+			name = FlightCoachUITests;
+			packageProductDependencies = (
+			);
+			productName = FlightCoachUITests;
+			productReference = 75E03DEA627ADF355950DF66 /* FlightCoachUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -489,6 +527,9 @@
 					A6295D71E29813E88592AF81 = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
+					};
+					BEE45709FDEAFC73F51847F9 = {
+						TestTargetID = A6295D71E29813E88592AF81;
 					};
 				};
 			};
@@ -508,6 +549,7 @@
 			targets = (
 				A6295D71E29813E88592AF81 /* FlightCoach */,
 				16ED583937609A4886A90029 /* FlightCoachTests */,
+				BEE45709FDEAFC73F51847F9 /* FlightCoachUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -533,6 +575,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4C96BDBE0C6A0ADA4216AA0D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B115D305694BCCF3316AC1F /* FullTraceFlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		71D4EDE396A493FD81B2B4C0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -608,6 +658,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6B27C76233CE9892F8E33581 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A6295D71E29813E88592AF81 /* FlightCoach */;
+			targetProxy = 94D1298BDDD6046274F6C951 /* PBXContainerItemProxy */;
+		};
 		D79EA8C1CEEBB6B0F102F3E3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A6295D71E29813E88592AF81 /* FlightCoach */;
@@ -616,6 +671,25 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		0ABC3914FDE00360EDD14104 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.flightcoach.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FlightCoach;
+			};
+			name = Release;
+		};
 		0C26E875451B333D10E8165B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -819,6 +893,25 @@
 			};
 			name = Debug;
 		};
+		D3E54E535217C0CE38CA4A07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.flightcoach.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FlightCoach;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -827,6 +920,15 @@
 			buildConfigurations = (
 				1F8D55CB37F86B71639694C7 /* Debug */,
 				1599301CD8E12A45ADEDF7D4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B823AD8E224C01B4E4DFDFE8 /* Build configuration list for PBXNativeTarget "FlightCoachUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3E54E535217C0CE38CA4A07 /* Debug */,
+				0ABC3914FDE00360EDD14104 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
