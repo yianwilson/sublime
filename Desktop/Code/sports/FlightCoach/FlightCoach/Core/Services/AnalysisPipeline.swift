@@ -114,7 +114,11 @@ final class AnalysisPipeline: ObservableObject {
                         // Apple's trajectory detector first: proven on ground-truth
                         // fixtures where motion heuristics fail. Falls back to the
                         // spec-v3 tracer if no plausible trajectory survives.
-                        let impactTime = Double(impactWindow.estimatedFrameIndex) / extractor.frameRate
+                        // Impact anchor: address-ball disappearance is frame-accurate
+                        // where the pose-based estimator has been seconds off.
+                        let impactTime = await BallTrackingService.shared.impactTimeByDisappearance(
+                            address: addressNorm, frames: frames)
+                            ?? Double(impactWindow.estimatedFrameIndex) / extractor.frameRate
                         if let vnPoints = await TrajectoryDetectionService.shared.ballFlight(
                             url: videoURL, addressNormalized: addressNorm,
                             frameRate: extractor.frameRate, impactTime: impactTime),

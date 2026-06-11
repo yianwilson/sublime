@@ -686,6 +686,125 @@ final class BallTrackingService {
         return max(0, 1 - presenceRatio)
     }
 
+    /// Impact time in the extractor's clock, found by when the address ball
+    /// *leaves* its spot — the one impact signal that needs no pose, no swing
+    /// model, and no club detection.
+    ///
+    /// Signal (validated against ground truth on both GT fixtures): the count
+    /// of white-outlier pixels (luma > local median + 0.2) in a tight window
+    /// around the address. The ball keeps that count high even under the
+    /// golfer's shadow; after impact it collapses. Absolute counts vary with
+    /// resolution and leftover tee/divot brightness, so presence is relative
+    /// to the clip's own peak, and impact is the end of the LAST sustained
+    /// presence run. Returns nil when no ball signal exists or it never leaves.
+    func impactTimeByDisappearance(address: CGPoint, frames: [VideoFrame]) async -> TimeInterval? {
+        let sorted = frames.sorted { $0.index < $1.index }
+        guard sorted.count >= 8 else { return nil }
+
+        var samples: [(time: TimeInterval, whitePixels: Int)] = []
+        for (idx, frame) in sorted.enumerated() {
+            if let count = whiteOutlierCount(in: frame.image, at: address) {
+                samples.append((frame.timestamp, count))
+            }
+            if idx % 8 == 0 { await Task.yield() }
+        }
+        guard samples.count >= 8, let peak = samples.map(\.whitePixels).max(), peak >= 8 else {
+            #if DEBUG
+            print("impactTimeByDisappearance: no ball signal at address (peak \(samples.map(\.whitePixels).max() ?? 0))")
+            #endif
+            return nil
+        }
+
+        // Longest sustained presence run = the ball sitting at address; the
+        // last run can be the golfer retrieving the tee. Require sustained
+        // absence right after the run (club-crossing transients are shorter).
+        let threshold = max(4, Int(Double(peak) * 0.35))
+        let present = samples.map { $0.whitePixels >= threshold }
+        var bestRun: (start: Int, end: Int)?
+        var i = 0
+        while i < present.count {
+            if present[i] {
+                var j = i
+                while j + 1 < present.count && present[j + 1] { j += 1 }
+                if j > i, j - i >= (bestRun.map { $0.end - $0.start } ?? -1) {
+                    bestRun = (i, j)
+                }
+                i = j + 1
+            } else {
+                i += 1
+            }
+        }
+        guard let run = bestRun, run.end + 3 < samples.count,
+              !present[run.end + 1], !present[run.end + 2], !present[run.end + 3] else {
+            #if DEBUG
+            print("impactTimeByDisappearance: no clean disappearance (peak \(peak))")
+            #endif
+            return nil
+        }
+        let impact = (samples[run.end].time + samples[run.end + 1].time) / 2
+        #if DEBUG
+        print(String(format: "impactTimeByDisappearance: t=%.2fs (peak %d, threshold %d, %d samples)",
+                     impact, peak, threshold, samples.count))
+        #endif
+        return impact
+    }
+
+    /// White-outlier pixel count in a tight full-resolution window around a
+    /// normalized (vision y-up) point. nil when the window can't be read.
+    private func whiteOutlierCount(in image: CIImage, at point: CGPoint) -> Int? {
+        let extent = image.extent
+        let longEdge = max(extent.width, extent.height)
+        let r = max(8, Int(0.011 * longEdge))
+        let ro = r * 4
+        let px = extent.origin.x + point.x * extent.width
+        let py = extent.origin.y + point.y * extent.height
+        let crop = CGRect(x: px - CGFloat(ro), y: py - CGFloat(ro),
+                          width: CGFloat(ro * 2), height: CGFloat(ro * 2))
+            .intersection(extent)
+        guard !crop.isEmpty, crop.width >= CGFloat(r), crop.height >= CGFloat(r),
+              let cg = ciContext.createCGImage(image.cropped(to: crop), from: crop),
+              let data = cg.dataProvider?.data,
+              let ptr = CFDataGetBytePtr(data) else { return nil }
+
+        let w = cg.width
+        let h = cg.height
+        let bpp = max(1, cg.bitsPerPixel / 8)
+        let bpr = cg.bytesPerRow
+        let dataLen = CFDataGetLength(data)
+
+        // CGImage rows are top-down; the crop's CIImage origin is bottom-left.
+        let centerX = Int(px - crop.minX)
+        let centerY = Int(crop.maxY - py)
+
+        var histogram = [Int](repeating: 0, count: 256)
+        var lumas = [Int](repeating: 0, count: w * h)
+        for row in 0..<h {
+            for col in 0..<w {
+                let offset = row * bpr + col * bpp
+                guard offset + 2 < dataLen else { continue }
+                let luma = (Int(ptr[offset]) + Int(ptr[offset + 1]) + Int(ptr[offset + 2])) / 3
+                histogram[luma] += 1
+                lumas[row * w + col] = luma
+            }
+        }
+        var cumulative = 0
+        var median = 0
+        let half = (w * h) / 2
+        for (value, count) in histogram.enumerated() {
+            cumulative += count
+            if cumulative >= half { median = value; break }
+        }
+
+        let cutoff = median + 51
+        var count = 0
+        for row in max(0, centerY - r)..<min(h, centerY + r) {
+            for col in max(0, centerX - r)..<min(w, centerX + r) where lumas[row * w + col] > cutoff {
+                count += 1
+            }
+        }
+        return count
+    }
+
     /// Nudge the address position toward the nearest strong, small, near-ground
     /// launch-motion blob — the ball is what moves at impact, so that motion is the
     /// most precise locator. Capped so a near-miss is corrected without the centroid

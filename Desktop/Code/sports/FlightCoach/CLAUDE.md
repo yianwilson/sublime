@@ -1,5 +1,10 @@
 # FlightCoach — Claude Code Agent System Guide
 
+> **Working on ball tracking / the tracer?** Read `TRACER_DEV_METHOD.md`
+> FIRST — it is the validated diagnostic cycle (ground-truth probes, clock
+> and orientation invariants, fixture GT tables, current state, next tasks).
+> `TRACER_PLAN.md` holds the four-layer target architecture.
+
 ## Overview
 
 This guide enables sub-agents (via Claude Code `/loop` and Agent tool) to iteratively improve ball tracking accuracy, validate UX changes, build features, and analyze competitive products. The system is autonomous: agents read test results, identify failure modes, edit code, re-test, and commit.

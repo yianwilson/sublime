@@ -169,7 +169,19 @@ final class VideoFrameExtractor {
     }
 
     private func displayOrientedImage(_ image: CIImage, preferredTransform: CGAffineTransform) -> CIImage {
-        var transformed = image.transformed(by: preferredTransform)
+        // The track transform is expressed in QuickTime's top-down convention;
+        // applying the raw matrix to a y-up CIImage rotates the wrong way for
+        // ±90° tracks (180°-flipped frames). Mapping the rotation angle to a
+        // CGImagePropertyOrientation lets CIImage handle the convention.
+        let degrees = Int((atan2(preferredTransform.b, preferredTransform.a) * 180 / .pi).rounded())
+        let orientation: CGImagePropertyOrientation
+        switch ((degrees % 360) + 360) % 360 {
+        case 90: orientation = .right
+        case 180: orientation = .down
+        case 270: orientation = .left
+        default: orientation = .up
+        }
+        var transformed = image.oriented(orientation)
         let extent = transformed.extent
         if extent.origin != .zero {
             transformed = transformed.transformed(by: CGAffineTransform(translationX: -extent.origin.x, y: -extent.origin.y))

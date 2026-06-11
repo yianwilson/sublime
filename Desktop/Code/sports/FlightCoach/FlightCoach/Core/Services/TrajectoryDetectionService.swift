@@ -6,14 +6,16 @@ import CoreGraphics
 /// Detects the launched ball's flight using Apple's built-in small-object
 /// trajectory detector (`VNDetectTrajectoriesRequest`).
 ///
-/// Sample buffers are read straight from the asset and fed to the request, so
-/// trajectory timestamps share the SAME AVFoundation timeline as
-/// `VideoFrameExtractor` frames — immune to the iPhone-MOV edit-list offsets
-/// that make ffmpeg/player/media clocks disagree.
+/// Clock discipline: VN observation times and the impact anchor MUST share a
+/// timeline, but extractor PTS and VN times can disagree by over a second on
+/// edit-listed iPhone MOVs. So the impact anchor (address-ball disappearance)
+/// is measured inside the SAME buffer-read loop that feeds VN — one loop, one
+/// clock, by construction.
 ///
-/// The detector fires on every shimmering leaf, so candidates are filtered by
-/// physics: must start near the address ball, must rise, and (when known)
-/// must begin inside the impact window.
+/// Orientation: sample buffers are raw (un-rotated) while the address point is
+/// display-space. Rather than trusting a rotation-mapping table, the four
+/// rotation candidates of the address point are all probed; the ball is
+/// wherever the white-pixel signal actually is.
 final class TrajectoryDetectionService {
     static let shared = TrajectoryDetectionService()
 
@@ -26,40 +28,94 @@ final class TrajectoryDetectionService {
         let points: [(time: TimeInterval, point: CGPoint)]
     }
 
-    /// Runs the trajectory detector over the whole clip. Heavy (full decode);
-    /// call once per analysis.
-    func detectTrajectories(url: URL) async -> [Trajectory] {
-        await Task.detached(priority: .userInitiated) {
-            Self.runDetection(url: url)
-        }.value
+    struct DetectionResult {
+        /// Trajectories in RAW buffer space (un-rotated).
+        let trajectories: [Trajectory]
+        /// Address-ball disappearance time in the SAME clock as trajectory
+        /// times. nil when no clean ball signal exists at the address.
+        let impactTime: TimeInterval?
+        /// Which rotation candidate of the display-space address held the ball
+        /// signal — defines the raw↔display mapping. nil when no signal.
+        let orientationIndex: Int?
     }
 
     /// The ball flight as normalised track points, or nil if no plausible
-    /// trajectory survives the physics filters.
+    /// trajectory survives the physics filters. `fallbackImpactTime` (extractor
+    /// clock) is only used when the in-loop disappearance anchor fails.
     func ballFlight(url: URL,
                     addressNormalized: CGPoint,
                     frameRate: Double,
-                    impactTime: TimeInterval?) async -> [BallTrackPoint]? {
-        let all = await detectTrajectories(url: url)
-        guard !all.isEmpty else { return nil }
+                    impactTime fallbackImpactTime: TimeInterval?) async -> [BallTrackPoint]? {
+        let result = await Task.detached(priority: .userInitiated) {
+            Self.runDetection(url: url, address: addressNormalized)
+        }.value
+        guard !result.trajectories.isEmpty else { return nil }
 
-        // Vision space is y-up; addressNormalized is already in that space.
+        // VN reports trajectories in raw buffer space; the winning probe index
+        // is direct evidence of how display space maps onto the buffer.
+        // (Verified on IMG_4935: rotation −90 MOV, ball found at index 3.)
+        let toDisplay: (CGPoint) -> CGPoint
+        switch result.orientationIndex {
+        case 1: toDisplay = { CGPoint(x: 1 - $0.x, y: 1 - $0.y) }
+        case 2: toDisplay = { CGPoint(x: 1 - $0.y, y: $0.x) }
+        case 3: toDisplay = { CGPoint(x: $0.y, y: 1 - $0.x) }
+        default: toDisplay = { $0 }
+        }
+        let all = result.trajectories.map { t in
+            Trajectory(uuid: t.uuid, start: t.start, end: t.end, confidence: t.confidence,
+                       points: t.points.map { (time: $0.time, point: toDisplay($0.point)) })
+        }
+
+        let anchor = result.impactTime ?? fallbackImpactTime
         let candidates = all.filter { t in
             guard let first = t.points.first, let last = t.points.last else { return false }
             let nearAddress = hypot(first.point.x - addressNormalized.x,
-                                    first.point.y - addressNormalized.y) < 0.12
+                                    first.point.y - addressNormalized.y) < 0.10
+            // A launched ball never appears BELOW the tee.
+            let aboveTee = first.point.y > addressNormalized.y - 0.015
             let rises = last.point.y - first.point.y > 0.03
-            let inWindow = impactTime.map { abs(t.start - $0) < 1.5 } ?? true
-            return nearAddress && rises && inWindow
+            // A receding ball flies straight; reversals mean VN bridged the
+            // club arc or shimmer into one trajectory.
+            var pathLength: CGFloat = 0
+            for (a, b) in zip(t.points, t.points.dropFirst()) {
+                pathLength += hypot(b.point.x - a.point.x, b.point.y - a.point.y)
+            }
+            let net = hypot(last.point.x - first.point.x, last.point.y - first.point.y)
+            let straight = pathLength < 0.001 || net / pathLength > 0.7
+            // A real flight is detected on (nearly) consecutive frames; sparse
+            // re-detections seconds apart are shimmer stitched together.
+            let dts = zip(t.points, t.points.dropFirst()).map { $1.time - $0.time }
+            let denseCount = dts.filter { $0 <= 3.5 / frameRate }.count
+            let dense = !dts.isEmpty && Double(denseCount) / Double(dts.count) >= 0.6
+            let inWindow: Bool
+            if let impact = result.impactTime {
+                // Same clock as t.start, but VN reports observations up to
+                // ~1.5s after the producing frame — the window needs slack
+                // above, none below (no flight before impact).
+                inWindow = t.start > impact - 0.25 && t.start < impact + 1.6
+            } else if let fallback = fallbackImpactTime {
+                inWindow = abs(t.start - fallback) < 1.5
+            } else {
+                inWindow = true
+            }
+            return nearAddress && aboveTee && rises && straight && dense && inWindow
         }
-        guard let best = candidates.max(by: {
-            score($0, impactTime: impactTime) < score($1, impactTime: impactTime)
-        }) else { return nil }
+        // The club crosses the address region BEFORE impact; the ball is the
+        // LAST riser to depart it. Among near-simultaneous candidates (VN
+        // duplicates of the same flight) the score decides.
+        guard let best = candidates.sorted(by: { a, b in
+            if abs(a.start - b.start) > 0.3 { return a.start < b.start }
+            return score(a, impactTime: anchor, address: addressNormalized)
+                < score(b, impactTime: anchor, address: addressNormalized)
+        }).last else { return nil }
 
         #if DEBUG
         let f = best.points.first!.point, l = best.points.last!.point
-        print(String(format: "TrajectoryDetection: ball flight t=%.2f–%.2fs conf=%.2f (%.3f,%.3f)→(%.3f,%.3f) of %d trajectories",
-                     best.start, best.end, best.confidence, f.x, f.y, l.x, l.y, all.count))
+        print(String(format: "TrajectoryDetection: ball flight t=%.2f–%.2fs conf=%.2f (%.3f,%.3f)→(%.3f,%.3f) of %d trajectories, %d candidates, impact %@",
+                     best.start, best.end, best.confidence, f.x, f.y, l.x, l.y,
+                     all.count, candidates.count,
+                     result.impactTime.map { String(format: "%.2fs (in-loop)", $0) }
+                        ?? fallbackImpactTime.map { String(format: "%.2fs (fallback)", $0) } ?? "none"))
         #endif
 
         return best.points.map { tp in
@@ -70,56 +126,231 @@ final class TrajectoryDetectionService {
         }
     }
 
-    private func score(_ t: Trajectory, impactTime: TimeInterval?) -> Double {
+    private func score(_ t: Trajectory, impactTime: TimeInterval?, address: CGPoint) -> Double {
         // Rise is capped: a receding ball rises modestly while birds/shimmer
         // can rise across half the frame — magnitude of rise is not evidence.
         let rise = min(Double((t.points.last?.point.y ?? 0) - (t.points.first?.point.y ?? 0)), 0.15)
         let proximity = impactTime.map { 2.0 / (1.0 + abs(t.start - $0)) } ?? 0.5
-        return Double(t.points.count) * 0.2 + Double(t.confidence) + rise * 2 + proximity
+        // The real flight STARTS at the tee; VN's duplicate fragments of the
+        // same flight start progressively further along it.
+        let addressDistance = t.points.first.map {
+            Double(hypot($0.point.x - address.x, $0.point.y - address.y))
+        } ?? 1
+        let addressCloseness = max(0, 0.10 - addressDistance) * 10
+        return Double(t.points.count) * 0.2 + Double(t.confidence) + rise * 2 + proximity + addressCloseness
     }
 
-    private static func runDetection(url: URL) -> [Trajectory] {
+    private static func runDetection(url: URL, address: CGPoint?) -> DetectionResult {
         let asset = AVURLAsset(url: url)
         guard let track = asset.tracks(withMediaType: .video).first,
-              let reader = try? AVAssetReader(asset: asset) else { return [] }
+              let reader = try? AVAssetReader(asset: asset) else {
+            return DetectionResult(trajectories: [], impactTime: nil, orientationIndex: nil)
+        }
 
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
         ])
         output.alwaysCopiesSampleData = false
         reader.add(output)
-        guard reader.startReading() else { return [] }
+        guard reader.startReading() else {
+            return DetectionResult(trajectories: [], impactTime: nil, orientationIndex: nil)
+        }
 
         var observed: [UUID: Trajectory] = [:]
+        // VN's observation timeRange is NOT reliably the buffer PTS (off by
+        // over a second on 60fps MOVs), so every update is re-stamped with the
+        // PTS of the buffer that produced it. Callbacks run synchronously
+        // inside perform(), so the box always holds the producing buffer's PTS.
+        final class Clock { var pts: TimeInterval = 0 }
+        let clock = Clock()
         let request = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero,
                                                   trajectoryLength: 6) { req, _ in
             for obs in (req.results as? [VNTrajectoryObservation]) ?? [] {
-                let pts = obs.detectedPoints.map {
-                    (time: obs.timeRange.start.seconds, point: CGPoint(x: $0.x, y: $0.y))
+                let pts = obs.detectedPoints.map { CGPoint(x: $0.x, y: $0.y) }
+                guard let newest = pts.last else { continue }
+                let now = clock.pts
+                if let existing = observed[obs.uuid] {
+                    // detectedPoints is a sliding tail; each update contributes
+                    // one new point at the current buffer's time —
+                    // accumulating them preserves the FULL flight path.
+                    var points = existing.points
+                    if points.last?.point != newest {
+                        points.append((time: now, point: newest))
+                    }
+                    observed[obs.uuid] = Trajectory(
+                        uuid: obs.uuid, start: existing.start, end: now,
+                        confidence: max(existing.confidence, obs.confidence),
+                        points: points)
+                } else {
+                    // First sighting: the tail spans the trajectory's lifetime
+                    // so far; spread it back from the current buffer's time.
+                    let span = max(0, obs.timeRange.duration.seconds)
+                    let timed = pts.enumerated().map { i, p in
+                        (time: now - span + (pts.count > 1 ? Double(i) / Double(pts.count - 1) : 1) * span,
+                         point: p)
+                    }
+                    observed[obs.uuid] = Trajectory(
+                        uuid: obs.uuid, start: now - span, end: now,
+                        confidence: obs.confidence, points: timed)
                 }
-                // Re-time points evenly across the observation's range; per-point
-                // times aren't exposed, and this is accurate enough for frame mapping.
-                var timed: [(TimeInterval, CGPoint)] = []
-                let span = obs.timeRange.duration.seconds
-                for (i, p) in pts.enumerated() {
-                    let f = pts.count > 1 ? Double(i) / Double(pts.count - 1) : 0
-                    timed.append((obs.timeRange.start.seconds + f * span, p.point))
-                }
-                observed[obs.uuid] = Trajectory(
-                    uuid: obs.uuid,
-                    start: obs.timeRange.start.seconds,
-                    end: obs.timeRange.end.seconds,
-                    confidence: obs.confidence,
-                    points: timed.map { (time: $0.0, point: $0.1) })
             }
         }
         request.objectMinimumNormalizedRadius = 0.001
         request.objectMaximumNormalizedRadius = 0.05
 
+        // Address-ball presence probes: the display-space address under each
+        // possible buffer rotation. The real one shows the ball's white-pixel
+        // step signal; the others show turf.
+        let probePoints: [CGPoint] = address.map { a in
+            [CGPoint(x: a.x, y: a.y),
+             CGPoint(x: 1 - a.x, y: 1 - a.y),
+             CGPoint(x: a.y, y: 1 - a.x),
+             CGPoint(x: 1 - a.y, y: a.x)]
+        } ?? []
+        var probeSeries = [[(time: TimeInterval, count: Int)]](repeating: [], count: probePoints.count)
+
         let handler = VNSequenceRequestHandler()
+        var frameCounter = 0
+        var probeWindowArea = 0
+        let probeStride = max(1, Int((Double(track.nominalFrameRate) / 15.0).rounded()))
         while let sample = output.copyNextSampleBuffer() {
+            let pts = CMSampleBufferGetPresentationTimeStamp(sample).seconds
+            clock.pts = pts
+            if !probePoints.isEmpty, frameCounter % probeStride == 0,
+               let buffer = CMSampleBufferGetImageBuffer(sample) {
+                if probeWindowArea == 0 {
+                    let edge = max(CVPixelBufferGetWidth(buffer), CVPixelBufferGetHeight(buffer))
+                    let r = max(8, Int(0.011 * Double(edge)))
+                    probeWindowArea = 4 * r * r
+                }
+                for (i, p) in probePoints.enumerated() {
+                    if let count = lumaWhiteOutlierCount(buffer: buffer, at: p) {
+                        probeSeries[i].append((pts, count))
+                    }
+                }
+            }
+            frameCounter += 1
             try? handler.perform([request], on: sample)
         }
-        return Array(observed.values)
+
+        let anchor = disappearanceTime(from: probeSeries, windowArea: probeWindowArea)
+        #if DEBUG
+        if let dumpDir = ProcessInfo.processInfo.environment["VN_DUMP_DIR"] {
+            let rows = observed.values.map { t in
+                ["start": t.start, "end": t.end, "conf": Double(t.confidence),
+                 "points": t.points.map { [$0.time, $0.point.x, $0.point.y] }] as [String: Any]
+            }
+            let payload: [String: Any] = ["impact": anchor?.impact ?? -1,
+                                          "orientation": anchor?.index ?? -1,
+                                          "trajectories": rows]
+            if let data = try? JSONSerialization.data(withJSONObject: payload) {
+                let name = url.deletingPathExtension().lastPathComponent
+                try? data.write(to: URL(fileURLWithPath: "\(dumpDir)/vn_\(name).json"))
+            }
+        }
+        #endif
+        #if DEBUG
+        print(String(format: "TrajectoryDetection: %d trajectories, in-loop impact %@ orientation %@ (probe peaks %@)",
+                     observed.count,
+                     anchor.map { String(format: "%.2fs", $0.impact) } ?? "nil",
+                     anchor.map { "\($0.index)" } ?? "nil",
+                     probeSeries.map { "\($0.map(\.count).max() ?? 0)" }.joined(separator: "/")))
+        #endif
+        return DetectionResult(trajectories: Array(observed.values),
+                               impactTime: anchor?.impact,
+                               orientationIndex: anchor?.index)
+    }
+
+    /// White-outlier pixel count (luma > window median + 0.2) in a tight window
+    /// around a normalised y-up point, read from the buffer's luma plane.
+    private static func lumaWhiteOutlierCount(buffer: CVPixelBuffer, at point: CGPoint) -> Int? {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+
+        let planar = CVPixelBufferIsPlanar(buffer)
+        let w = planar ? CVPixelBufferGetWidthOfPlane(buffer, 0) : CVPixelBufferGetWidth(buffer)
+        let h = planar ? CVPixelBufferGetHeightOfPlane(buffer, 0) : CVPixelBufferGetHeight(buffer)
+        let bpr = planar ? CVPixelBufferGetBytesPerRowOfPlane(buffer, 0) : CVPixelBufferGetBytesPerRow(buffer)
+        guard let base = planar ? CVPixelBufferGetBaseAddressOfPlane(buffer, 0) : CVPixelBufferGetBaseAddress(buffer) else {
+            return nil
+        }
+        let ptr = base.assumingMemoryBound(to: UInt8.self)
+
+        let r = max(8, Int(0.011 * Double(max(w, h))))
+        let ro = r * 4
+        let cx = Int(point.x * CGFloat(w - 1))
+        let cy = Int((1 - point.y) * CGFloat(h - 1))
+        let x0 = max(0, cx - ro), x1 = min(w, cx + ro)
+        let y0 = max(0, cy - ro), y1 = min(h, cy + ro)
+        guard x1 - x0 >= r, y1 - y0 >= r else { return nil }
+
+        var histogram = [Int](repeating: 0, count: 256)
+        for row in y0..<y1 {
+            for col in x0..<x1 {
+                histogram[Int(ptr[row * bpr + col])] += 1
+            }
+        }
+        var cumulative = 0
+        var median = 0
+        let half = (x1 - x0) * (y1 - y0) / 2
+        for (value, count) in histogram.enumerated() {
+            cumulative += count
+            if cumulative >= half { median = value; break }
+        }
+
+        let cutoff = UInt8(min(255, median + 51))
+        var count = 0
+        for row in max(0, cy - r)..<min(h, cy + r) {
+            for col in max(0, cx - r)..<min(w, cx + r) where ptr[row * bpr + col] > cutoff {
+                count += 1
+            }
+        }
+        return count
+    }
+
+    /// Impact = end of the LAST sustained presence run, taken from the
+    /// strongest probe series that shows a real disappearance step. A series
+    /// that stays bright forever (sky under a wrong rotation) has no step, and
+    /// one where most of the window is "outlier" isn't a compact blob — both
+    /// are skipped regardless of brightness.
+    private static func disappearanceTime(
+        from series: [[(time: TimeInterval, count: Int)]],
+        windowArea: Int
+    ) -> (impact: TimeInterval, index: Int)? {
+        var best: (peak: Int, impact: TimeInterval, index: Int)?
+        for (index, samples) in series.enumerated() {
+            guard samples.count >= 8, let peak = samples.map(\.count).max(),
+                  peak >= 8, windowArea > 0, peak <= windowArea / 2 else { continue }
+            guard let impact = stepTime(samples: samples, peak: peak) else { continue }
+            if best == nil || peak > best!.peak {
+                best = (peak, impact, index)
+            }
+        }
+        return best.map { ($0.impact, $0.index) }
+    }
+
+    /// The ball sits at address for seconds — the LONGEST presence run — then
+    /// vanishes for good. "Last run" is wrong: the golfer retrieving the tee
+    /// re-brightens the window near the end of the clip.
+    private static func stepTime(samples: [(time: TimeInterval, count: Int)], peak: Int) -> TimeInterval? {
+        let threshold = max(4, Int(Double(peak) * 0.35))
+        let present = samples.map { $0.count >= threshold }
+        var bestRun: (start: Int, end: Int)?
+        var i = 0
+        while i < present.count {
+            if present[i] {
+                var j = i
+                while j + 1 < present.count && present[j + 1] { j += 1 }
+                if j > i, j - i >= (bestRun.map { $0.end - $0.start } ?? -1) {
+                    bestRun = (i, j)
+                }
+                i = j + 1
+            } else {
+                i += 1
+            }
+        }
+        guard let run = bestRun, run.end + 3 < samples.count,
+              !present[run.end + 1], !present[run.end + 2], !present[run.end + 3] else { return nil }
+        return (samples[run.end].time + samples[run.end + 1].time) / 2
     }
 }
