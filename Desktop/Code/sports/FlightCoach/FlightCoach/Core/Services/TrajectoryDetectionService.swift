@@ -103,9 +103,18 @@ final class TrajectoryDetectionService {
                      pick.seed.address.x, pick.seed.address.y, pick.seed.impactTime,
                      validated.count, seeds.count, all.count))
         #endif
+        // Trajectory times are when VN REPORTED each point — ~1.4s after the
+        // producing frame. Drawn as-is, the trail renders during the
+        // follow-through and reads as tracking the club/hands. The ball
+        // physically leaves at the seed's impact (+ the few frames VN needs
+        // to lock on), so shift the whole flight back to that moment.
+        let lockOn = 6.0 / frameRate
+        let offset = pick.seed.impactTime >= 0
+            ? best.points.first!.time - (pick.seed.impactTime + lockOn)
+            : 0
         let points = best.points.map { tp in
-            BallTrackPoint(frameIndex: Int((tp.time * frameRate).rounded()),
-                           timestamp: tp.time,
+            BallTrackPoint(frameIndex: Int(((tp.time - offset) * frameRate).rounded()),
+                           timestamp: tp.time - offset,
                            x: Float(tp.point.x), y: Float(tp.point.y),
                            confidence: best.confidence)
         }
