@@ -66,7 +66,15 @@ final class VideoStorageService {
         generator.videoComposition = await Self.sdrDisplayComposition(for: asset)
 
         let time = CMTime(seconds: 0.5, preferredTimescale: 600)
-        let cgImage = try await generator.image(at: time).image
+        let cgImage: CGImage
+        if let composed = try? await generator.image(at: time).image {
+            cgImage = composed
+        } else {
+            // Composition render can fail on the simulator (err -12306);
+            // a washed-out HDR thumbnail beats none.
+            generator.videoComposition = nil
+            cgImage = try await generator.image(at: time).image
+        }
         let uiImage = UIImage(cgImage: cgImage)
 
         guard let jpegData = uiImage.jpegData(compressionQuality: 0.7) else {
