@@ -92,7 +92,36 @@ display-space GT path) — see "Traps" below.
 GT derivation recipe: ffmpeg frame-differencing for flight, YOLO + pixel
 crops for tee/address, manual crop inspection for impact bracketing.
 
-## Current state (2026-06-11, end of session)
+## Current state (2026-06-12): IN-APP TRACE VERIFIED ON SIMULATOR
+
+The REAL app flow (Photos import → auto seed → flight → on-screen trail)
+draws the true flight on IMG_4935: trail pixels vs GT worst 0.076; seed at
+0.004 from the tee; impact 5.55s. Verify with `FullTraceFlowUITests` +
+orange-pixel extraction (see `/tmp/verify_trail2.py` pattern: detect the
+pillarboxed video rect, extract orange px, min-distance to GT points).
+App stdout (pipeline prints) is captured in the xcresult:
+`xcrun xcresulttool export diagnostics` → `StandardOutputAndStandardError-
+com.flightcoach.app.txt`. Persisted points: SwiftData sqlite at the app
+container (`simctl get_app_container`), table ZPRACTICESESSION, column
+ZANALYSISRESULTDATA (JSON).
+
+Key architecture now: `disappearanceSeeds` (pose-free, full-res, cluster
++grid-probed white-blob departures; within a cluster the ball departs
+LAST) → `TrajectoryDetectionService.ballFlight(seeds:)` (one VN pass, all
+seeds cross-validated, latest-validated-impact wins, physics gates) →
+spec-v3 tracer fallback from seeds[0]. Photos picker uses
+`preferredItemEncoding: .current` — the default rendition transcodes
+4K60→30fps where VN cannot see a fast pull (~7 frames); the transcode
+fixture (IMG_4935_imported.mov) keeps that path tested: exact seed+impact
+but NO reliable flight at 30fps (fallback follows the club — known gap).
+
+Open gaps: 4165-class (slow riser; VN-blind, seeds ambiguous among
+shoes/markers — needs layer-2 ML ball recognition); 30fps-transcode
+flights; pose unavailable on simulator (works on device, would improve
+seed veto). PipelineSeedTests is the fast full-pipeline mirror — run it
+before any sim E2E.
+
+## Previous state (2026-06-11, end of session)
 
 - **Both `TrajectoryServiceTests` GREEN, stable across 4 consecutive runs.**
   - 4935: real flight selected, worst GT distance **0.027** (space-verified).
