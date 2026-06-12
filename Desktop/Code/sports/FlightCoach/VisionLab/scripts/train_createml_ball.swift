@@ -39,8 +39,25 @@ let compiled = try MLModel.compileModel(at: modelURL)
 let vnModel = try VNCoreMLModel(for: try MLModel(contentsOf: compiled))
 
 var hits = 0, total = 0
+var falsePositives = 0, negatives = 0
 for ann in anns {
-    guard let gt = ann.annotations.first else { continue }
+    guard let gt = ann.annotations.first else {
+        // Negative crop (bare tee, shoes, club head, turf): any confident
+        // detection is a false positive — the seed validator's failure mode.
+        negatives += 1
+        let imgURL = evalDir.appendingPathComponent(ann.image)
+        let handler = VNImageRequestHandler(url: imgURL)
+        let req = VNCoreMLRequest(model: vnModel)
+        req.imageCropAndScaleOption = .scaleFill
+        try handler.perform([req])
+        let dets = ((req.results as? [VNRecognizedObjectObservation]) ?? [])
+            .filter { $0.confidence >= 0.5 }
+        if !dets.isEmpty {
+            falsePositives += 1
+            print(String(format: "EVAL %@: FALSE POSITIVE conf %.2f", ann.image, dets[0].confidence))
+        }
+        continue
+    }
     total += 1
     let imgURL = evalDir.appendingPathComponent(ann.image)
     let handler = VNImageRequestHandler(url: imgURL)
@@ -75,3 +92,4 @@ for ann in anns {
     }
 }
 print("HELD-OUT ACCURACY: \(hits)/\(total) labeled frames within 5% tolerance")
+print("HELD-OUT FALSE POSITIVES: \(falsePositives)/\(negatives) negative crops with a confident detection")
