@@ -75,13 +75,20 @@ final class AnalysisPipeline: ObservableObject {
                     poseFrames: poseFrames,
                     manualContactFrame: session.manualCorrection?.correctedContactFrame
                 )
+                // Pose-free seeds: the address ball is a small white blob that
+                // sits still for seconds and permanently disappears at impact.
+                // Frame-accurate where the pose-based estimator is seconds off
+                // (and pose is unavailable on the simulator entirely).
+                let disappearanceSeeds = await BallTrackingService.shared.disappearanceSeeds(frames: frames)
+                let impactFrame = disappearanceSeeds.first.map { Int(($0.impactTime * extractor.frameRate).rounded()) }
+                    ?? impactWindow.estimatedFrameIndex
                 let densePadding = max(12, Int(extractor.frameRate * 0.35))
                 // Bound dense extraction to a window around the estimated impact so a
                 // low-confidence (broad-fallback) impact window — e.g. when pose
                 // detection is unavailable — can't explode into hundreds of frames.
                 let maxDenseHalfSpan = max(densePadding, Int(extractor.frameRate * 0.6))
-                let denseLower = max(0, max(impactWindow.startFrameIndex - densePadding, impactWindow.estimatedFrameIndex - maxDenseHalfSpan))
-                let denseUpper = min(extractor.totalFrames - 1, min(impactWindow.endFrameIndex + densePadding, impactWindow.estimatedFrameIndex + maxDenseHalfSpan))
+                let denseLower = max(0, impactFrame - maxDenseHalfSpan)
+                let denseUpper = min(extractor.totalFrames - 1, impactFrame + maxDenseHalfSpan)
                 let denseRange = denseLower...max(denseLower, denseUpper)
                 let denseFrames = try await extractor.extractFrames(frameRange: denseRange, stride: 1) { [weak self] p in
                     Task { @MainActor in self?.publishProgress(.trackingBall(p * 0.35)) }
@@ -102,35 +109,38 @@ final class AnalysisPipeline: ObservableObject {
                     // Spec-v3 tracer: address (seed or auto) → expanding-ROI launch candidates
                     // → multi-hypothesis launch selection → prediction-gated tracking → final
                     // validation → smoothing. Returns NO trace rather than a wrong one.
-                    let addressNorm: CGPoint?
-                    if let seed = manualBallTrackPoints.first {
-                        addressNorm = CGPoint(x: CGFloat(seed.x), y: CGFloat(seed.y))
-                    } else {
-                        addressNorm = await BallTrackingService.shared.detectAddressOnly(
+                    // Seed priority: manual tap → disappearance candidates
+                    // (VN-validated: a real ball's vanishing coincides with a
+                    // launch) → legacy pose-based address detection.
+                    var seeds = disappearanceSeeds
+                    if let manual = manualBallTrackPoints.first {
+                        seeds = [DisappearanceSeed(
+                            address: CGPoint(x: CGFloat(manual.x), y: CGFloat(manual.y)),
+                            impactTime: Double(impactFrame) / extractor.frameRate, runLength: .max, peak: .max)]
+                    } else if seeds.isEmpty {
+                        if let legacy = await BallTrackingService.shared.detectAddressOnly(
                             in: trackingFrames, poseFrames: poseFrames, impactWindow: impactWindow,
-                            cameraAngle: cameraAngle, handedness: handedness)
-                    }
-                    if let addressNorm {
-                        // Apple's trajectory detector first: proven on ground-truth
-                        // fixtures where motion heuristics fail. Falls back to the
-                        // spec-v3 tracer if no plausible trajectory survives.
-                        // Impact anchor: address-ball disappearance is frame-accurate
-                        // where the pose-based estimator has been seconds off.
-                        let impactTime = await BallTrackingService.shared.impactTimeByDisappearance(
-                            address: addressNorm, frames: frames)
-                            ?? Double(impactWindow.estimatedFrameIndex) / extractor.frameRate
-                        if let vnPoints = await TrajectoryDetectionService.shared.ballFlight(
-                            url: videoURL, addressNormalized: addressNorm,
-                            frameRate: extractor.frameRate, impactTime: impactTime),
-                           vnPoints.count >= 4 {
-                            ballTrackPoints = vnPoints
-                        } else {
-                            ballTrackPoints = await golfTracerTrack(
-                                frames: trackingFrames, addressNormalized: addressNorm,
-                                impactFrame: impactWindow.estimatedFrameIndex, frameRate: extractor.frameRate)
+                            cameraAngle: cameraAngle, handedness: handedness) {
+                            seeds = [DisappearanceSeed(
+                                address: legacy,
+                                impactTime: Double(impactWindow.estimatedFrameIndex) / extractor.frameRate,
+                                runLength: 0, peak: 0)]
                         }
-                    } else {
+                    }
+                    if seeds.isEmpty {
                         ballTrackPoints = []
+                    } else if let flight = await TrajectoryDetectionService.shared.ballFlight(
+                        url: videoURL, seeds: seeds, frameRate: extractor.frameRate),
+                        flight.points.count >= 4 {
+                        // Apple's trajectory detector: proven on ground truth
+                        // where motion heuristics fail.
+                        ballTrackPoints = flight.points
+                    } else {
+                        // Spec-v3 tracer fallback from the strongest seed.
+                        ballTrackPoints = await golfTracerTrack(
+                            frames: trackingFrames, addressNormalized: seeds[0].address,
+                            impactFrame: Int((seeds[0].impactTime * extractor.frameRate).rounded()),
+                            frameRate: extractor.frameRate)
                     }
                     publishProgress(.trackingBall(1), force: true)
                 }

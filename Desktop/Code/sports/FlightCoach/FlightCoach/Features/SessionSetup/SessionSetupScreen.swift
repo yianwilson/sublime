@@ -49,7 +49,11 @@ struct SessionSetupScreen: View {
         .navigationTitle("Session Setup")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { selectedMode = availableModes.first ?? "" }
-        .photosPicker(isPresented: $showingVideoPicker, selection: $selectedPhotoItem, matching: .videos)
+        // .current: deliver the ORIGINAL file — the default "compatible"
+        // rendition transcodes 4K60 to 30fps, below what the flight detector
+        // needs (a fast pull is only ~7 frames at 30fps).
+        .photosPicker(isPresented: $showingVideoPicker, selection: $selectedPhotoItem,
+                      matching: .videos, preferredItemEncoding: .current)
         .onChange(of: selectedPhotoItem) { _, item in
             guard let item else { return }
             Task { await importVideo(from: item) }

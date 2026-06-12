@@ -3,6 +3,17 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import CoreGraphics
 
+/// A candidate address ball found by its disappearance signature: a small
+/// white blob with a long stationary presence run that permanently vanishes
+/// (the impact). Address is normalized vision space (y-up); impactTime is in
+/// the extractor's PTS clock.
+struct DisappearanceSeed {
+    let address: CGPoint
+    let impactTime: TimeInterval
+    let runLength: Int
+    let peak: Int
+}
+
 final class BallTrackingService {
     static let shared = BallTrackingService()
 
@@ -703,21 +714,172 @@ final class BallTrackingService {
 
         var samples: [(time: TimeInterval, whitePixels: Int)] = []
         for (idx, frame) in sorted.enumerated() {
-            if let count = whiteOutlierCount(in: frame.image, at: address) {
-                samples.append((frame.timestamp, count))
+            if let stats = whiteOutlierStats(in: frame.image, at: address) {
+                samples.append((frame.timestamp, stats.count))
             }
             if idx % 8 == 0 { await Task.yield() }
         }
-        guard samples.count >= 8, let peak = samples.map(\.whitePixels).max(), peak >= 8 else {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["DISAPPEAR_SERIES"] != nil {
+            print("impactTimeByDisappearance series: " + samples.map {
+                String(format: "%.1f:%d", $0.time, $0.whitePixels) }.joined(separator: " "))
+        }
+        #endif
+        guard let step = Self.disappearanceStep(samples: samples) else {
             #if DEBUG
-            print("impactTimeByDisappearance: no ball signal at address (peak \(samples.map(\.whitePixels).max() ?? 0))")
+            print("impactTimeByDisappearance: no clean disappearance (peak \(samples.map(\.whitePixels).max() ?? 0))")
             #endif
             return nil
         }
+        #if DEBUG
+        print(String(format: "impactTimeByDisappearance: t=%.2fs (peak %d, run %d, %d samples)",
+                     step.impact, step.peak, step.runLength, samples.count))
+        #endif
+        return step.impact
+    }
 
-        // Longest sustained presence run = the ball sitting at address; the
-        // last run can be the golfer retrieving the tee. Require sustained
-        // absence right after the run (club-crossing transients are shorter).
+    /// Pose-free address + impact candidates: the address ball is a small
+    /// white blob that sits still for seconds (long presence run) and then
+    /// permanently disappears (impact). Several scene objects share that
+    /// signature (markers, club heads, shoes), so ALL valid candidates are
+    /// returned ranked by run length — the caller cross-validates against
+    /// detected launches (a real ball's disappearance coincides with one).
+    func disappearanceSeeds(frames: [VideoFrame]) async -> [DisappearanceSeed] {
+        let sorted = frames.sorted { $0.index < $1.index }
+        guard sorted.count >= 12 else { return [] }
+
+        // Stage 1: stable small blobs in the LOWER frame across early frames
+        // (the ball waits at address near the bottom for behind-ball videos).
+        // Local contrast finds it even inside the golfer's shadow, where
+        // absolute brightness misses it.
+        // Sample well past mid-clip: at address the ball often merges with the
+        // resting club head into one blob; only after takeaway does it appear
+        // alone (it stays on the tee until impact).
+        let sampleCount = 8
+        let span = max(1, sorted.count * 7 / 10)
+        var clusters: [(sum: CGPoint, hits: Int, frames: Set<Int>, box: CGRect)] = []
+        for s in 0..<sampleCount {
+            let frame = sorted[s * span / sampleCount]
+            var blobs = findBrightCandidates(in: frame.image, frameIndex: frame.index, withinROI: nil)
+            blobs += findContrastCandidates(in: frame.image, frameIndex: frame.index, withinROI: nil)
+            for blob in blobs where blob.centroid.y < 0.30 && blob.pixelCount <= 400 {
+                if let idx = clusters.firstIndex(where: { c in
+                    distance(CGPoint(x: c.sum.x / CGFloat(c.hits), y: c.sum.y / CGFloat(c.hits)), blob.centroid) < 0.02
+                }) {
+                    clusters[idx].sum.x += blob.centroid.x
+                    clusters[idx].sum.y += blob.centroid.y
+                    clusters[idx].hits += 1
+                    clusters[idx].frames.insert(frame.index)
+                    clusters[idx].box = clusters[idx].box.union(blob.boundingBox)
+                } else {
+                    clusters.append((blob.centroid, 1, [frame.index], blob.boundingBox))
+                }
+            }
+            await Task.yield()
+        }
+        // Probe positions: a grid around each top cluster — a ball touching
+        // the resting club head merges into one blob whose centre misses
+        // both, so neighbouring spots must be probed independently.
+        var probes: [CGPoint] = []
+        let ranked = clusters.filter { $0.frames.count >= 3 }.sorted { $0.frames.count > $1.frames.count }
+        for cluster in ranked.prefix(5) {
+            let centre = CGPoint(x: cluster.sum.x / CGFloat(cluster.hits), y: cluster.sum.y / CGFloat(cluster.hits))
+            for dx in [-0.04, -0.02, 0.0, 0.02, 0.04] {
+                for dy in [-0.02, 0.0, 0.02] {
+                    let p = CGPoint(x: centre.x + dx, y: centre.y + dy)
+                    guard p.x > 0.01, p.x < 0.99, p.y > 0.005, p.y < 0.45 else { continue }
+                    if !probes.contains(where: { distance($0, p) < 0.014 }) {
+                        probes.append(p)
+                    }
+                }
+            }
+        }
+        let stable = probes.prefix(40)
+        guard !stable.isEmpty else {
+            #if DEBUG
+            print("disappearanceSeeds: no stable white blobs (\(clusters.count) raw)")
+            #endif
+            return []
+        }
+
+        // The ball's outlier peak is a compact blob — a fraction of the probe
+        // window. Shimmering texture (water, foliage) lights up most of it.
+        let firstExtent = sorted[0].image.extent
+        let rx = max(6, Int(0.018 * firstExtent.width))
+        let ry = max(6, Int(0.018 * firstExtent.height))
+        let maxPeak = (2 * rx) * (2 * ry) / 3
+
+        // Stage 2: keep every probe with a clean long-presence → permanent-
+        // absence step. Re-centre each on its run-middle outlier centroid
+        // (cluster means drift onto neighbouring bright pixels).
+        var seeds: [DisappearanceSeed] = []
+        for candidate in stable {
+            var samples: [(time: TimeInterval, whitePixels: Int)] = []
+            var centroids: [CGPoint] = []
+            for (idx, frame) in sorted.enumerated() where idx % 2 == 0 {
+                if let stats = whiteOutlierStats(in: frame.image, at: candidate) {
+                    samples.append((frame.timestamp, stats.count))
+                    centroids.append(stats.centroid)
+                }
+                if idx % 16 == 0 { await Task.yield() }
+            }
+            guard let step = Self.disappearanceStep(samples: samples), step.peak <= maxPeak else { continue }
+            let address = centroids[(step.runStart + step.runEnd) / 2]
+            // A teed ball is PERFECTLY stationary through its presence run;
+            // shoes/feet/club heads shift constantly. Use the spread of the
+            // outlier centroid across the run.
+            let runCentroids = centroids[step.runStart...step.runEnd]
+            let meanX = runCentroids.map(\.x).reduce(0, +) / CGFloat(runCentroids.count)
+            let meanY = runCentroids.map(\.y).reduce(0, +) / CGFloat(runCentroids.count)
+            let spread = (runCentroids.map { distance($0, CGPoint(x: meanX, y: meanY)) }.reduce(0, +))
+                / CGFloat(runCentroids.count)
+            guard !seeds.contains(where: { distance($0.address, address) < 0.015 && abs($0.impactTime - step.impact) < 0.3 }) else { continue }
+            #if DEBUG
+            print(String(format: "disappearanceSeeds: blob (%.3f,%.3f) impact %.2fs run %d peak %d spread %.4f",
+                         address.x, address.y, step.impact, step.runLength, step.peak, spread))
+            #endif
+            guard spread <= 0.008 else { continue }
+            seeds.append(DisappearanceSeed(address: address, impactTime: step.impact,
+                                           runLength: step.runLength, peak: step.peak))
+        }
+        // The club rests BESIDE the ball at address and departs first (the
+        // takeaway); the ball outlasts it. Within a spatial cluster the
+        // representative is the LATEST substantial departure; clusters are
+        // ranked by the representative's prominence (bright compact blob,
+        // long run — shoe glints and paint marks are dim or brief).
+        var groups: [[DisappearanceSeed]] = []
+        for seed in seeds {
+            if let gi = groups.firstIndex(where: { g in
+                g.contains { distance($0.address, seed.address) < 0.06 }
+            }) {
+                groups[gi].append(seed)
+            } else {
+                groups.append([seed])
+            }
+        }
+        var ordered: [(strength: Int, seeds: [DisappearanceSeed])] = []
+        for group in groups {
+            let substantial = group.filter { $0.runLength >= 5 }
+            guard let rep = (substantial.isEmpty ? group : substantial)
+                .max(by: { $0.impactTime < $1.impactTime }) else { continue }
+            let rest = group
+                .filter { $0.impactTime != rep.impactTime || $0.address != rep.address }
+                .sorted { $0.peak * $0.runLength > $1.peak * $1.runLength }
+            let strength = group.map { $0.peak * $0.runLength }.max() ?? 0
+            ordered.append((strength, [rep] + rest))
+        }
+        ordered.sort { $0.strength > $1.strength }
+        return ordered.flatMap { $0.seeds }
+    }
+
+    /// Longest sustained presence run = the ball sitting at address; the last
+    /// run can be the golfer retrieving the tee. Requires sustained absence
+    /// right after the run (club-crossing transients are shorter), and a
+    /// compact peak (≥8 outlier pixels, not most of the window).
+    private static func disappearanceStep(
+        samples: [(time: TimeInterval, whitePixels: Int)]
+    ) -> (impact: TimeInterval, runLength: Int, peak: Int, runStart: Int, runEnd: Int)? {
+        guard samples.count >= 8, let peak = samples.map(\.whitePixels).max(), peak >= 8 else { return nil }
         let threshold = max(4, Int(Double(peak) * 0.35))
         let present = samples.map { $0.whitePixels >= threshold }
         var bestRun: (start: Int, end: Int)?
@@ -735,33 +897,26 @@ final class BallTrackingService {
             }
         }
         guard let run = bestRun, run.end + 3 < samples.count,
-              !present[run.end + 1], !present[run.end + 2], !present[run.end + 3] else {
-            #if DEBUG
-            print("impactTimeByDisappearance: no clean disappearance (peak \(peak))")
-            #endif
-            return nil
-        }
-        let impact = (samples[run.end].time + samples[run.end + 1].time) / 2
-        #if DEBUG
-        print(String(format: "impactTimeByDisappearance: t=%.2fs (peak %d, threshold %d, %d samples)",
-                     impact, peak, threshold, samples.count))
-        #endif
-        return impact
+              !present[run.end + 1], !present[run.end + 2], !present[run.end + 3] else { return nil }
+        return ((samples[run.end].time + samples[run.end + 1].time) / 2, run.end - run.start, peak, run.start, run.end)
     }
 
-    /// White-outlier pixel count in a tight full-resolution window around a
-    /// normalized (vision y-up) point. nil when the window can't be read.
-    private func whiteOutlierCount(in image: CIImage, at point: CGPoint) -> Int? {
+
+    /// White-outlier pixel count (and outlier centroid) in a tight
+    /// full-resolution window around a normalized (vision y-up) point.
+    /// nil when the window can't be read.
+    private func whiteOutlierStats(in image: CIImage, at point: CGPoint) -> (count: Int, centroid: CGPoint)? {
         let extent = image.extent
-        let longEdge = max(extent.width, extent.height)
-        let r = max(8, Int(0.011 * longEdge))
-        let ro = r * 4
+        // Square in NORMALIZED units so grid searches with 0.02 spacing have
+        // no coverage gaps on either axis.
+        let rx = max(6, Int(0.018 * extent.width))
+        let ry = max(6, Int(0.018 * extent.height))
         let px = extent.origin.x + point.x * extent.width
         let py = extent.origin.y + point.y * extent.height
-        let crop = CGRect(x: px - CGFloat(ro), y: py - CGFloat(ro),
-                          width: CGFloat(ro * 2), height: CGFloat(ro * 2))
+        let crop = CGRect(x: px - CGFloat(rx * 4), y: py - CGFloat(ry * 4),
+                          width: CGFloat(rx * 8), height: CGFloat(ry * 8))
             .intersection(extent)
-        guard !crop.isEmpty, crop.width >= CGFloat(r), crop.height >= CGFloat(r),
+        guard !crop.isEmpty, crop.width >= CGFloat(rx), crop.height >= CGFloat(ry),
               let cg = ciContext.createCGImage(image.cropped(to: crop), from: crop),
               let data = cg.dataProvider?.data,
               let ptr = CFDataGetBytePtr(data) else { return nil }
@@ -797,12 +952,21 @@ final class BallTrackingService {
 
         let cutoff = median + 51
         var count = 0
-        for row in max(0, centerY - r)..<min(h, centerY + r) {
-            for col in max(0, centerX - r)..<min(w, centerX + r) where lumas[row * w + col] > cutoff {
+        var sumX = 0
+        var sumY = 0
+        for row in max(0, centerY - ry)..<min(h, centerY + ry) {
+            for col in max(0, centerX - rx)..<min(w, centerX + rx) where lumas[row * w + col] > cutoff {
                 count += 1
+                sumX += col
+                sumY += row
             }
         }
-        return count
+        guard count > 0 else { return (0, point) }
+        // Outlier-pixel centroid back to normalized y-up image coords.
+        let cx2 = crop.minX + CGFloat(sumX) / CGFloat(count) + 0.5
+        let cy2 = crop.maxY - (CGFloat(sumY) / CGFloat(count) + 0.5)
+        return (count, CGPoint(x: (cx2 - extent.origin.x) / extent.width,
+                               y: (cy2 - extent.origin.y) / extent.height))
     }
 
     /// Nudge the address position toward the nearest strong, small, near-ground

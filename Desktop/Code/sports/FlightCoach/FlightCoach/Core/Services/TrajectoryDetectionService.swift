@@ -39,15 +39,28 @@ final class TrajectoryDetectionService {
         let orientationIndex: Int?
     }
 
-    /// The ball flight as normalised track points, or nil if no plausible
-    /// trajectory survives the physics filters. `fallbackImpactTime` (extractor
-    /// clock) is only used when the in-loop disappearance anchor fails.
+    /// Single-seed convenience (tests, manual-seed path).
     func ballFlight(url: URL,
                     addressNormalized: CGPoint,
                     frameRate: Double,
-                    impactTime fallbackImpactTime: TimeInterval?) async -> [BallTrackPoint]? {
+                    impactTime: TimeInterval?) async -> [BallTrackPoint]? {
+        let seed = DisappearanceSeed(address: addressNormalized,
+                                     impactTime: impactTime ?? -1, runLength: 0, peak: 0)
+        return await ballFlight(url: url, seeds: [seed], frameRate: frameRate)?.points
+    }
+
+    /// Cross-validates candidate seeds against detected launches: a real
+    /// address ball's disappearance coincides with a trajectory rising from
+    /// it. Detection runs ONCE; seeds are tried in the caller's ranking
+    /// order, and the first with a plausible flight wins. Seed impact times
+    /// are extractor-clock PTS — the same clock the trajectories are
+    /// re-stamped into.
+    func ballFlight(url: URL,
+                    seeds: [DisappearanceSeed],
+                    frameRate: Double) async -> (points: [BallTrackPoint], seed: DisappearanceSeed)? {
+        guard let probeAddress = seeds.first?.address else { return nil }
         let result = await Task.detached(priority: .userInitiated) {
-            Self.runDetection(url: url, address: addressNormalized)
+            Self.runDetection(url: url, address: probeAddress)
         }.value
         guard !result.trajectories.isEmpty else { return nil }
 
@@ -66,14 +79,55 @@ final class TrajectoryDetectionService {
                        points: t.points.map { (time: $0.time, point: toDisplay($0.point)) })
         }
 
-        let anchor = result.impactTime ?? fallbackImpactTime
+        // Evaluate EVERY seed; among those with a plausible flight, the ball
+        // is the one departing LATEST — practice swings and club glints fake
+        // earlier "impacts", and post-shot artefacts (tee retrieval) can't
+        // validate because their window falls past the end of the clip.
+        var validated: [(seed: DisappearanceSeed, flight: Trajectory)] = []
+        for seed in seeds {
+            if let best = select(from: all, seed: seed, frameRate: frameRate) {
+                validated.append((seed, best))
+            }
+        }
+        guard let pick = validated.max(by: { $0.seed.impactTime < $1.seed.impactTime }) else {
+            #if DEBUG
+            print("TrajectoryDetection: no flight for any of \(seeds.count) seeds (\(all.count) trajectories)")
+            #endif
+            return nil
+        }
+        let best = pick.flight
+        #if DEBUG
+        let f = best.points.first!.point, l = best.points.last!.point
+        print(String(format: "TrajectoryDetection: ball flight t=%.2f–%.2fs conf=%.2f (%.3f,%.3f)→(%.3f,%.3f) seed (%.3f,%.3f)@%.2fs [%d validated of %d seeds, %d trajectories]",
+                     best.start, best.end, best.confidence, f.x, f.y, l.x, l.y,
+                     pick.seed.address.x, pick.seed.address.y, pick.seed.impactTime,
+                     validated.count, seeds.count, all.count))
+        #endif
+        let points = best.points.map { tp in
+            BallTrackPoint(frameIndex: Int((tp.time * frameRate).rounded()),
+                           timestamp: tp.time,
+                           x: Float(tp.point.x), y: Float(tp.point.y),
+                           confidence: best.confidence)
+        }
+        return (points, pick.seed)
+    }
+
+    private func select(from all: [Trajectory], seed: DisappearanceSeed, frameRate: Double) -> Trajectory? {
+        let address = seed.address
         let candidates = all.filter { t in
             guard let first = t.points.first, let last = t.points.last else { return false }
-            let nearAddress = hypot(first.point.x - addressNormalized.x,
-                                    first.point.y - addressNormalized.y) < 0.10
-            // A launched ball never appears BELOW the tee.
-            let aboveTee = first.point.y > addressNormalized.y - 0.015
-            let rises = last.point.y - first.point.y > 0.03
+            let nearAddress = hypot(first.point.x - address.x,
+                                    first.point.y - address.y) < 0.10
+            // By the time VN locks on (+0.7s after impact minimum), the ball
+            // has visibly risen — a flight starting at or below the tee is a
+            // ground-level glint or edge artifact.
+            let aboveTee = first.point.y > address.y + 0.03
+            // A ball receding from a behind-ball camera rises substantially —
+            // also relative to its horizontal drift (GT flights: ≥0.65× the
+            // drift). Near-horizontal movers are club glints and birds.
+            let rise = Double(last.point.y - first.point.y)
+            let drift = abs(Double(last.point.x - first.point.x))
+            let rises = rise > 0.03 && rise >= 0.55 * drift
             // A receding ball flies straight; reversals mean VN bridged the
             // club arc or shimmer into one trajectory.
             var pathLength: CGFloat = 0
@@ -87,43 +141,39 @@ final class TrajectoryDetectionService {
             let dts = zip(t.points, t.points.dropFirst()).map { $1.time - $0.time }
             let denseCount = dts.filter { $0 <= 3.5 / frameRate }.count
             let dense = !dts.isEmpty && Double(denseCount) / Double(dts.count) >= 0.6
-            let inWindow: Bool
-            if let impact = result.impactTime {
-                // Same clock as t.start, but VN reports observations up to
-                // ~1.5s after the producing frame — the window needs slack
-                // above, none below (no flight before impact).
-                inWindow = t.start > impact - 0.25 && t.start < impact + 1.6
-            } else if let fallback = fallbackImpactTime {
-                inWindow = abs(t.start - fallback) < 1.5
-            } else {
-                inWindow = true
-            }
-            return nearAddress && aboveTee && rises && straight && dense && inWindow
+            // A receding launched ball decelerates in image space immediately
+            // (perspective + gravity); a walking golfer's cap/shoe and drifting
+            // shimmer rise steadily. Compare early vs late rise RATE.
+            let third = max(2, t.points.count / 3)
+            let earlyRise = Double(t.points[third - 1].point.y - first.point.y)
+            let lateRise = Double(last.point.y - t.points[t.points.count - third].point.y)
+            let earlyDt = max(0.01, t.points[third - 1].time - first.time)
+            let lateDt = max(0.01, last.time - t.points[t.points.count - third].time)
+            let decelerates = earlyRise / earlyDt > 1.5 * max(0.0, lateRise / lateDt)
+            // A receding ball's image-space rise rate is bounded (it moves
+            // away); a walking golfer is CLOSE to the camera and sweeps the
+            // frame much faster. Fastest GT flight: 0.35/s.
+            let riseRate = Double(last.point.y - first.point.y) / max(0.05, last.time - first.time)
+            let plausibleRate = riseRate <= 0.42
+            // Trajectory times are buffer PTS (re-stamped), the same clock as
+            // the seed's impact. VN reports a NEWLY appearing object (the
+            // launched ball) ~1.4s after its first frame — consistently
+            // +1.35…+1.6s on both GT fixtures. Trajectories starting AT the
+            // seed's impact are the same motion event that caused the
+            // occlusion (club glints, practice swings), not a launch.
+            let inWindow = seed.impactTime < 0
+                || (t.start > seed.impactTime + 1.1 && t.start < seed.impactTime + 1.8)
+            return nearAddress && aboveTee && rises && straight && dense
+                && decelerates && plausibleRate && inWindow
         }
         // The club crosses the address region BEFORE impact; the ball is the
         // LAST riser to depart it. Among near-simultaneous candidates (VN
         // duplicates of the same flight) the score decides.
-        guard let best = candidates.sorted(by: { a, b in
+        return candidates.sorted(by: { a, b in
             if abs(a.start - b.start) > 0.3 { return a.start < b.start }
-            return score(a, impactTime: anchor, address: addressNormalized)
-                < score(b, impactTime: anchor, address: addressNormalized)
-        }).last else { return nil }
-
-        #if DEBUG
-        let f = best.points.first!.point, l = best.points.last!.point
-        print(String(format: "TrajectoryDetection: ball flight t=%.2f–%.2fs conf=%.2f (%.3f,%.3f)→(%.3f,%.3f) of %d trajectories, %d candidates, impact %@",
-                     best.start, best.end, best.confidence, f.x, f.y, l.x, l.y,
-                     all.count, candidates.count,
-                     result.impactTime.map { String(format: "%.2fs (in-loop)", $0) }
-                        ?? fallbackImpactTime.map { String(format: "%.2fs (fallback)", $0) } ?? "none"))
-        #endif
-
-        return best.points.map { tp in
-            BallTrackPoint(frameIndex: Int((tp.time * frameRate).rounded()),
-                           timestamp: tp.time,
-                           x: Float(tp.point.x), y: Float(tp.point.y),
-                           confidence: best.confidence)
-        }
+            return score(a, impactTime: seed.impactTime >= 0 ? seed.impactTime : nil, address: address)
+                < score(b, impactTime: seed.impactTime >= 0 ? seed.impactTime : nil, address: address)
+        }).last
     }
 
     private func score(_ t: Trajectory, impactTime: TimeInterval?, address: CGPoint) -> Double {
@@ -234,6 +284,17 @@ final class TrajectoryDetectionService {
         }
 
         let anchor = disappearanceTime(from: probeSeries, windowArea: probeWindowArea)
+        // Probe found no ball signal → fall back to the track's rotation tag.
+        // (270° ↔ index 3 verified on IMG_4935; 90° ↔ 2 by symmetry.)
+        let transform = track.preferredTransform
+        let degrees = Int((atan2(transform.b, transform.a) * 180 / .pi).rounded())
+        let transformIndex: Int
+        switch ((degrees % 360) + 360) % 360 {
+        case 180: transformIndex = 1
+        case 90: transformIndex = 2
+        case 270: transformIndex = 3
+        default: transformIndex = 0
+        }
         #if DEBUG
         if let dumpDir = ProcessInfo.processInfo.environment["VN_DUMP_DIR"] {
             let rows = observed.values.map { t in
@@ -258,7 +319,7 @@ final class TrajectoryDetectionService {
         #endif
         return DetectionResult(trajectories: Array(observed.values),
                                impactTime: anchor?.impact,
-                               orientationIndex: anchor?.index)
+                               orientationIndex: anchor?.index ?? transformIndex)
     }
 
     /// White-outlier pixel count (luma > window median + 0.2) in a tight window
