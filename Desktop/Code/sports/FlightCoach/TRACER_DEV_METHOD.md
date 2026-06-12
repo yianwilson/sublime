@@ -134,6 +134,39 @@ flights; pose unavailable on simulator (works on device, would improve
 seed veto); HDR tone mapping in TracerExportService. PipelineSeedTests is
 the fast full-pipeline mirror — run it before any sim E2E.
 
+## Layer 2 state (2026-06-12 evening)
+
+**Trained: ball/not-ball patch classifier — held-out 89%, 0 false
+positives.** The Create ML OBJECT DETECTOR is a dead end at this data
+budget: it memorized its 3 training scenes (train mAP@50 0.80) and
+detected NOTHING on unseen videos (0/57, twice, both split variants).
+Classification generalizes where detection can't — and the integration
+point (scoring disappearance seeds) supplies positions already.
+
+- `find_impact.py` — YOLO static-ball candidates + disappearance step;
+  REVIEW CROPS ARE THE QA (it dated 0373's club takeaway as impact; the
+  crops caught it; final bracketing was visual strips).
+- `build_patch_dataset.py` — positives free from verified (position,
+  impact): pre-impact frames + per-frame YOLO relocation (handheld drift
+  moves the ball tens of px; bright-blob relocation latches onto club
+  glints/signs — only semantic relocation works). Negatives: bare tee
+  post-impact + impostor catalog + turf. Split by VIDEO.
+- `train_patch_classifier.swift` — MLImageClassifier, 96px patches, ball
+  ≈40% of patch, exposure/blur/rotation/noise augmentation. Held-out:
+  0373 (unseen daylight golfer/course) ball 83% / notball 100%; 3325
+  (night mat, out-of-domain) 70% / 100%.
+- Verified impact table: 4935@5.53 4165@4.45 0373@2.52 1256@2.81
+  3325@2.39. 9596/9899 (night range) are YOLO-blind — unlabeled.
+- Source videos live in `VisionLab/datasets/source-videos/` — Downloads
+  copies get iCloud-evicted mid-session.
+
+Next integration steps: (1) bundle BallPatchClassifier.mlmodel, score
+each disappearance seed over several pre-impact frames (majority vote —
+83%/frame compounds, 0 FP kills the shoe/marker/club whack-a-mole);
+(2) per-frame flight tracking with the classifier + Kalman gating
+(layer 4) to extend measured flight past VN's ~0.15s; that also unlocks
+real shot-shape classification and the 4165/30fps classes.
+
 ## Previous state (2026-06-11, end of session)
 
 - **Both `TrajectoryServiceTests` GREEN, stable across 4 consecutive runs.**
