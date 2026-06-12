@@ -59,6 +59,40 @@ enum BallisticTrajectory {
         return arc.count >= 3 ? arc : nil
     }
 
+    /// Extension for launches that exit the frame while still rising (the
+    /// behind-ball camera): no apex is visible, so the parabola can't anchor
+    /// — and a quadratic extrapolated from a ~0.15s window amplifies
+    /// curvature noise (measured: it undershot the real flight by 0.14+).
+    /// A straight continuation of the final velocity tracked the real ball
+    /// to within ~0.06 on ground truth.
+    static func extendLaunch(points: [BallTrackPoint], frameInterval: TimeInterval) -> [BallTrackPoint]? {
+        let pts = points.sorted { $0.timestamp < $1.timestamp }
+        guard pts.count >= 4, let last = pts.last else { return nil }
+        let ref = pts[pts.count - min(4, pts.count)]
+        let dt = last.timestamp - ref.timestamp
+        guard dt > 0.01 else { return nil }
+        let vx = Double(last.x - ref.x) / dt
+        let vy = Double(last.y - ref.y) / dt
+        guard vy > 0.05 else { return nil }            // must still be rising
+
+        var arc = pts
+        let step = max(frameInterval, 1.0 / 120.0)
+        var t = last.timestamp
+        var x = Double(last.x)
+        var y = Double(last.y)
+        var frame = last.frameIndex
+        while t - last.timestamp < 1.2 {
+            t += step
+            frame += 1
+            x += vx * step
+            y += vy * step
+            if x < -0.02 || x > 1.02 || y > 1.02 { break }
+            arc.append(BallTrackPoint(frameIndex: frame, timestamp: t,
+                                      x: Float(x), y: Float(y), confidence: 0.5))
+        }
+        return arc.count > pts.count ? arc : nil
+    }
+
     // MARK: - Helpers
 
     /// Drop the static prefix (ball at rest at address) so the arc — and therefore

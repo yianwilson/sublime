@@ -133,8 +133,11 @@ final class AnalysisPipeline: ObservableObject {
                         url: videoURL, seeds: seeds, frameRate: extractor.frameRate),
                         flight.points.count >= 4 {
                         // Apple's trajectory detector: proven on ground truth
-                        // where motion heuristics fail.
-                        ballTrackPoints = flight.points
+                        // where motion heuristics fail. The detector only sees
+                        // the early flight (the ball shrinks fast); the arc
+                        // fit extends it through apex/exit.
+                        ballTrackPoints = ballisticArc(
+                            from: flight.points, frameRate: extractor.frameRate)
                     } else {
                         // Spec-v3 tracer fallback from the strongest seed.
                         ballTrackPoints = await golfTracerTrack(
@@ -350,8 +353,17 @@ final class AnalysisPipeline: ObservableObject {
             #endif
             return arc
         }
-        // Fit failed ⇒ the launch wasn't a clean arc (noise/club/body). Don't draw the
-        // raw zig-zag — fall back to just the ball so the user can tap-seed instead.
+        // No apex in frame (behind-ball shots exit while climbing) — extend
+        // the measured launch along its final velocity instead.
+        if let extended = BallisticTrajectory.extendLaunch(points: raw, frameInterval: interval) {
+            #if DEBUG
+            print("AnalysisPipeline: launch extended linearly → \(extended.count) points (from \(raw.count) tracked)")
+            #endif
+            return extended
+        }
+        // Neither worked ⇒ the points weren't a clean launch (noise/club/body).
+        // Don't draw the raw zig-zag — fall back to just the ball so the user
+        // can tap-seed instead.
         #if DEBUG
         print("AnalysisPipeline: ballistic fit failed — showing ball only (\(raw.count) raw pts suppressed)")
         #endif

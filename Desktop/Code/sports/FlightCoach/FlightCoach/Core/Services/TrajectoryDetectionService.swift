@@ -103,6 +103,30 @@ final class TrajectoryDetectionService {
                      pick.seed.address.x, pick.seed.address.y, pick.seed.impactTime,
                      validated.count, seeds.count, all.count))
         #endif
+        // VN keeps a trajectory alive after losing the shrinking ball and
+        // drifts onto background shimmer — a kinked tail that poisons the
+        // ballistic arc fit downstream. Truncate at the first step that jumps
+        // well past the established cadence.
+        var kept: [(time: TimeInterval, point: CGPoint)] = []
+        var steps: [CGFloat] = []
+        for tp in best.points {
+            if let last = kept.last {
+                let step = hypot(tp.point.x - last.point.x, tp.point.y - last.point.y)
+                if steps.count >= 3 {
+                    let median = steps.sorted()[steps.count / 2]
+                    if step > max(0.05, median * 3) { break }
+                }
+                steps.append(step)
+            }
+            kept.append(tp)
+        }
+        let flightPoints = kept.count >= 4 ? kept : best.points
+        #if DEBUG
+        if flightPoints.count != best.points.count {
+            print("TrajectoryDetection: trimmed drifted tail \(best.points.count) → \(flightPoints.count) points")
+        }
+        #endif
+
         // Trajectory times are when VN REPORTED each point — ~1.4s after the
         // producing frame. Drawn as-is, the trail renders during the
         // follow-through and reads as tracking the club/hands. The ball
@@ -110,9 +134,9 @@ final class TrajectoryDetectionService {
         // to lock on), so shift the whole flight back to that moment.
         let lockOn = 6.0 / frameRate
         let offset = pick.seed.impactTime >= 0
-            ? best.points.first!.time - (pick.seed.impactTime + lockOn)
+            ? flightPoints.first!.time - (pick.seed.impactTime + lockOn)
             : 0
-        let points = best.points.map { tp in
+        let points = flightPoints.map { tp in
             BallTrackPoint(frameIndex: Int(((tp.time - offset) * frameRate).rounded()),
                            timestamp: tp.time - offset,
                            x: Float(tp.point.x), y: Float(tp.point.y),
