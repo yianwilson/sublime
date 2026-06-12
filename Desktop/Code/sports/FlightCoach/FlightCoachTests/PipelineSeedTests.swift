@@ -17,11 +17,18 @@ final class PipelineSeedTests: XCTestCase {
                               gtAddress: CGPoint(x: 0.6856, y: 0.1607))
     }
 
-    /// The EXACT bytes the app analyses: the Photos-import path re-encodes
-    /// (4K60 → 4K30, darker video-range transfer). Validating only the
-    /// original misses everything the transcode changes.
+    /// Photos' "compatible" rendition (4K30 SDR) — legacy sessions imported
+    /// before the .current/SDR60 import path. VN is blind on ~7-frame flights
+    /// at 30fps; expectation here is a correct SEED, flight via fallback only.
     func testFullGolfPath_IMG4935_imported() async throws {
         try await runGolfPath(resource: "IMG_4935_imported", ext: "mov",
+                              gtAddress: CGPoint(x: 0.6856, y: 0.1607))
+    }
+
+    /// The EXACT bytes the app now analyses: import requests the original
+    /// (60fps) and tone-maps HDR→SDR via the 1080p H.264 export.
+    func testFullGolfPath_IMG4935_sdr60() async throws {
+        try await runGolfPath(resource: "IMG_4935_sdr60", ext: "mov",
                               gtAddress: CGPoint(x: 0.6856, y: 0.1607))
     }
 

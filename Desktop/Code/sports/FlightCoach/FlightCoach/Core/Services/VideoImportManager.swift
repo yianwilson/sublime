@@ -8,6 +8,13 @@ final class VideoImportManager: ObservableObject {
     @Published var isImporting = false
     @Published var importError: String?
 
+    // Imports keep the ORIGINAL Photos bytes (the picker requests .current):
+    // 60fps is required by the flight detector, and the pipeline is
+    // ground-truth-validated against HDR originals. HDR is tone-mapped at
+    // DISPLAY time (player + thumbnails) — re-encoding to SDR here either
+    // halves the frame rate (4K H.264 presets) or shrinks the ball below
+    // what the detector needs (1080p).
+
     func importVideo(from item: PhotosPickerItem) async throws -> URL {
         isImporting = true
         defer { isImporting = false }

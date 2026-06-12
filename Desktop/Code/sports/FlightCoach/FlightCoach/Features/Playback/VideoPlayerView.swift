@@ -81,8 +81,16 @@ final class VideoPlayerCoordinator: ObservableObject {
 
     func setup(session: PracticeSession) {
         guard let url = VideoStorageService.shared.videoURL(for: session) else { return }
-        let player = AVPlayer(url: url)
+        let asset = AVURLAsset(url: url)
+        let item = AVPlayerItem(asset: asset)
+        let player = AVPlayer(playerItem: item)
         self.player = player
+        // HDR originals render washed-out without tone mapping (always on the
+        // simulator); the composition forces SDR output. Applied async — it
+        // takes effect live and is nil for SDR sources.
+        Task {
+            item.videoComposition = await VideoStorageService.sdrDisplayComposition(for: asset)
+        }
 
         let interval = CMTime(seconds: 0.04, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in

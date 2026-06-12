@@ -69,6 +69,7 @@
 		B5FDADD7FF6F369D4FFD2CDC /* FlightCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35B5708E63CFF7EC209F648 /* FlightCoachApp.swift */; };
 		B7A5C839FF57DBD8C7E63153 /* IMG_3980.mov in Resources */ = {isa = PBXBuildFile; fileRef = EB9ABD69678628FC4F6E9C15 /* IMG_3980.mov */; };
 		BA43FD04CB3F9F7D9BC300DE /* TracerDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF955DF7F8A275AC98A0CAD7 /* TracerDebug.swift */; };
+		BD03490D7BA704A379A13F57 /* IMG_4935_sdr60.mov in Resources */ = {isa = PBXBuildFile; fileRef = 6F25ACA6B90E0EFB526E86ED /* IMG_4935_sdr60.mov */; };
 		BD70BCC10B81EE932289F2AB /* VisionBenchmarkExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69217B118F8CD4C9834781F2 /* VisionBenchmarkExportService.swift */; };
 		BEC0F29098B59201C333B973 /* PhotosUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E9EB010F9AA9CC7B98B70353 /* PhotosUI.framework */; };
 		C105CE11BBB4F24B6B15954A /* CompositeBallDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC86F9B59CFA452B073AC1B /* CompositeBallDetector.swift */; };
@@ -135,6 +136,7 @@
 		669283E7FCB1C65E75E3C09B /* TracerCandidateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracerCandidateDetector.swift; sourceTree = "<group>"; };
 		69217B118F8CD4C9834781F2 /* VisionBenchmarkExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionBenchmarkExportService.swift; sourceTree = "<group>"; };
 		6DB646E833409804658C6112 /* ManualCorrectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCorrectionSheet.swift; sourceTree = "<group>"; };
+		6F25ACA6B90E0EFB526E86ED /* IMG_4935_sdr60.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = IMG_4935_sdr60.mov; sourceTree = "<group>"; };
 		71263D3F56DB540A4D1CFE88 /* PracticeSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSession.swift; sourceTree = "<group>"; };
 		72A2CDB53FAF1D3ADBC6C325 /* FlightCoach.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FlightCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75E03DEA627ADF355950DF66 /* FlightCoachUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FlightCoachUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -234,6 +236,7 @@
 			children = (
 				961CDAD74A39C1F90B601806 /* IMG_4165.mp4 */,
 				FD0EFB070FE5411FE28553BA /* IMG_4935_imported.mov */,
+				6F25ACA6B90E0EFB526E86ED /* IMG_4935_sdr60.mov */,
 				3096C0B52263262810E08551 /* IMG_4935.MOV */,
 			);
 			path = Resources;
@@ -586,6 +589,7 @@
 				8B266F98BB48969F69C8D166 /* IMG_4165.mp4 in Resources */,
 				887F83835027FAF8BD2B3AC1 /* IMG_4935.MOV in Resources */,
 				4D2F451972F1930BC69358AF /* IMG_4935_imported.mov in Resources */,
+				BD03490D7BA704A379A13F57 /* IMG_4935_sdr60.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

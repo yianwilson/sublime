@@ -115,11 +115,24 @@ spec-v3 tracer fallback from seeds[0]. Photos picker uses
 fixture (IMG_4935_imported.mov) keeps that path tested: exact seed+impact
 but NO reliable flight at 30fps (fallback follows the club — known gap).
 
+**HDR (2026-06-12 PM):** iPhone originals are HLG HDR (10-bit HEVC BT.2020,
+`ffprobe color_transfer=arib-std-b67`). They render washed-out/over-bright
+wherever tone mapping is missing — ALWAYS on the simulator. Do NOT fix by
+transcoding at import: 4K H.264 presets halve 60→30fps (VN-blind), and the
+1080p SDR60 export shrinks the ball so VN misses the flight AND the seed's
+impact slides to the tee-pickup (validated failures, fixture
+IMG_4935_sdr60.mov kept). Fix = display-side tone mapping only:
+`VideoStorageService.sdrDisplayComposition(for:)` (SDR BT.709
+AVVideoComposition) applied to the player item and thumbnail generator.
+Analysis always runs on the original bytes. NOTE: `TracerExportService`
+(traced-video export) does not yet tone-map — exported videos of HDR
+sources will look washed.
+
 Open gaps: 4165-class (slow riser; VN-blind, seeds ambiguous among
 shoes/markers — needs layer-2 ML ball recognition); 30fps-transcode
 flights; pose unavailable on simulator (works on device, would improve
-seed veto). PipelineSeedTests is the fast full-pipeline mirror — run it
-before any sim E2E.
+seed veto); HDR tone mapping in TracerExportService. PipelineSeedTests is
+the fast full-pipeline mirror — run it before any sim E2E.
 
 ## Previous state (2026-06-11, end of session)
 
