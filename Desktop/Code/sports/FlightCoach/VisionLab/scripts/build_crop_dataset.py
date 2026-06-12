@@ -39,7 +39,10 @@ VIDEOS = {
     "IMG_3325": dict(file="IMG_3325.mov",  x=0.6268, y=0.7124, ball=17, impact=2.39,
                      impostors=[(0.750, 0.720)]),                    # range-ball tray edge
 }
-EVAL_VIDEOS = {"IMG_1256", "IMG_3325"}   # split by video, never by frame
+# Split by video, never by frame. Eval = one unseen DAYLIGHT video (0373:
+# different golfer/course/120fps — the v1 generalization question) plus the
+# night-mat clip as an explicit out-of-domain probe.
+EVAL_VIDEOS = {"IMG_0373", "IMG_3325"}
 
 POSITIVES_PER_VIDEO = 40
 TEE_NEGATIVES = 16
